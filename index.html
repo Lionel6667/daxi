@@ -3325,6 +3325,50 @@
         // Initialisation Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+        
+        // Initialisation des notifications
+        async function initializeNotifications() {
+            const notificationModal = document.getElementById('notificationPermissionModal');
+            const acceptBtn = document.getElementById('acceptNotificationBtn');
+            const declineBtn = document.getElementById('declineNotificationBtn');
+            
+            if (!('Notification' in window)) {
+                console.log('Ce navigateur ne supporte pas les notifications desktop');
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                return;
+            }
+
+            if (Notification.permission === 'denied') {
+                return;
+            }
+
+            acceptBtn.addEventListener('click', async () => {
+                try {
+                    const result = await Notification.requestPermission();
+                    if (result === 'granted') {
+                        new Notification('Daxi', {
+                            body: 'Notifications activées. Vous recevrez des alertes.',
+                            icon: '/img/logo.png'
+                        });
+                    }
+                    notificationModal.style.display = 'none';
+                    localStorage.setItem('notifyPermission', result);
+                } catch (error) {
+                    console.error('Erreur lors de la demande de permission:', error);
+                }
+            });
+
+            declineBtn.addEventListener('click', () => {
+                notificationModal.style.display = 'none';
+                localStorage.setItem('notifyPermission', 'denied');
+            });
+        }
+
+        // Appeler l'initialisation des notifications
+        initializeNotifications();
 
         // --- Debug helpers: in-page panel + global error capture ---
         // Toggle this to true during development to show the in-page debug panel.
@@ -4297,14 +4341,28 @@
                 const banner = document.getElementById('notifyBanner');
                 if (!banner) return;
                 banner.style.display = 'block';
-                document.getElementById('allowNotifyBtn').addEventListener('click', function(){
-                    Notification.requestPermission().then(p => {
-                        localStorage.setItem('notifyPermission', p);
-                        banner.style.display = 'none';
-                        if (p === 'granted') {
-                            try { new Notification('Daxi', { body: 'Notifications activées. Vous recevrez des alertes.' }); } catch(e){}
+                document.getElementById('allowNotifyBtn').addEventListener('click', async function(){
+                    try {
+                        if (!('Notification' in window)) {
+                            console.error('Ce navigateur ne supporte pas les notifications');
+                            return;
                         }
-                    }).catch(e=>{ localStorage.setItem('notifyPermission','denied'); banner.style.display='none'; });
+                        
+                        const result = await Notification.requestPermission();
+                        localStorage.setItem('notifyPermission', result);
+                        banner.style.display = 'none';
+                        
+                        if (result === 'granted') {
+                            new Notification('Daxi', {
+                                body: 'Notifications activées. Vous recevrez des alertes.',
+                                icon: '/img/logo.png'  // Assurez-vous que ce chemin est correct
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Erreur lors de la demande de permission:', error);
+                        localStorage.setItem('notifyPermission', 'denied');
+                        banner.style.display = 'none';
+                    }
                 });
                 document.getElementById('laterNotifyBtn').addEventListener('click', function(){ banner.style.display='none'; });
             } catch(e) { /* ignore on insecure contexts */ }
