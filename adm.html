@@ -491,58 +491,6 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .stat-icon {
-            .order-card {
-                border-radius: 12px;
-                padding: 12px;
-                overflow: hidden;
-                box-shadow: 0 6px 18px rgba(15,23,42,0.06);
-                transition: transform 0.18s ease, box-shadow 0.18s ease;
-            }
-
-            /* New announcement-style compact orders */
-            .order-annonce {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-                padding: 12px 14px;
-                border-radius: 10px;
-                background: linear-gradient(180deg,#ffffff,#fbfbfd);
-                box-shadow: 0 6px 18px rgba(2,6,23,0.04);
-                margin-bottom: 10px;
-                cursor: pointer;
-            }
-            .order-annonce .meta { display:flex; gap:10px; align-items:center; }
-            .order-annonce .meta .status-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; }
-            .status-new { background:#f87171; color:white; }
-            .status-pending { background:#fbbf24; color:white; }
-            .status-assigned { background:#34d399; color:white; }
-            .order-details { padding:12px 14px; border-radius:8px; background:#fff; margin-top:8px; box-shadow:0 4px 12px rgba(2,6,23,0.04); }
-            .order-actions { display:flex; gap:8px; align-items:center; }
-
-            /* Ensure orders list doesn't overlap the fixed tab bar */
-            .order-scroll-container { padding-bottom: 120px; }
-
-        /* Ensure order maps and cards stay below the tab bar */
-        .order-card, .order-annonce, .order-details, .order-map { position: relative; z-index: 10; }
-        /* Leaflet paned elements inside order-map should not escape above tab-bar */
-        .order-map .leaflet-pane, .order-map .leaflet-container, .order-map .leaflet-popup { z-index: 10 !important; }
-
-            /* Confirmed orders area */
-            #confirmed-orders-list .confirmed-item { display:flex; justify-content:space-between; align-items:center; padding:10px; border-radius:10px; background:#f8fafc; margin-bottom:8px; }
-            #confirmed-orders-list .confirmed-info { font-weight:600; }
-            #confirmed-orders-list .confirmed-contact { background:#25D366; color:white; padding:8px 10px; border-radius:8px; text-decoration:none; display:inline-flex; gap:8px; align-items:center; }
-
-        /* driver list styles */
-        .driver-list .btn-propose-driver { width:34px; height:34px; border-radius:8px; font-weight:700; }
-        .driver-list .w-8 { width:36px; height:36px; }
-        .proposed-list .inline-flex { display:inline-flex; }
-        .btn-close-details { background:#f3f4f6; }
-        .btn-close-details:hover { background:#e5e7eb; }
-        .btn-propose-driver { background: #3b82f6; color: white; border: none; }
-        .btn-propose-driver:hover { background: #2563eb; }
-    .visually-hidden { position: absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
-        .proposed-list .inline-flex { background: #f8fafc; padding:6px 10px; border-radius:999px; }
             border-bottom: 1px solid #e5e7eb;
             padding: 12px 0;
         }
@@ -561,6 +509,74 @@
         }
         .delete-pending-btn:hover {
             transform: scale(1.2);
+        }
+
+        /* Nouveaux styles pour la section "Personnes à contacter" */
+        .contact-section {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+        .contact-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .contact-info {
+            flex: 1;
+        }
+        .contact-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .contact-phone {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        .contact-btn {
+            background-color: #25D366;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .contact-btn:hover {
+            background-color: #128C7E;
+            transform: translateY(-2px);
+        }
+
+        /* Styles pour la carte améliorée */
+        .map-container {
+            height: 400px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* Styles pour la poubelle dans l'historique */
+        .delete-history-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.3s ease;
+        }
+        .delete-history-btn:hover {
+            background-color: #dc2626;
         }
     </style>
     <script>
@@ -713,14 +729,12 @@
                     </div>
                     
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-xl shadow-sm p-6">
+                        <!-- SECTION "PERSONNES À CONTACTER" REMPLACE "DERNIERS CHAUFFEURS INSCRITS" -->
+                        <div class="contact-section">
                             <div class="flex justify-between items-center mb-4">
-                                <h2 class="text-xl font-bold text-gray-800">Derniers chauffeurs inscrits</h2>
-                                <button id="export-drivers-dash" class="bg-primary text-white px-3 py-1 rounded-lg font-medium flex items-center text-sm">
-                                    <i class="fas fa-download mr-1"></i> Exporter
-                                </button>
+                                <h2 class="text-xl font-bold text-gray-800">Personnes à contacter</h2>
                             </div>
-                            <div class="space-y-4" id="recent-drivers">
+                            <div class="space-y-2" id="contact-list">
                                 <div class="text-center py-8">
                                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                                     <p class="mt-3 text-gray-600">Chargement...</p>
@@ -868,11 +882,9 @@
                             <h2 class="text-xl font-bold text-gray-800">Commandes en attente</h2>
                         </div>
                         
-                        <div class="mb-4">
-                            <h3 class="text-md font-semibold text-gray-700">Commandes confirmées</h3>
-                            <div id="confirmed-orders-list" class="mt-3"></div>
-                        </div>
-
+                        <!-- MODIFICATION 1: Suppression de l'affichage des commandes confirmées -->
+                        <!-- La section "Commandes confirmées" a été supprimée -->
+                        
                         <div class="order-scroll-container" id="orders-list">
                             <div class="text-center py-8">
                                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
@@ -1137,9 +1149,117 @@
             });
             
             loadEarningsChart();
-            loadRecentDrivers();
+            loadContactList(); // MODIFICATION 2: Charger la liste des personnes à contacter
             loadRecentTrips();
             calculateEarningsByPeriod();
+        }
+        
+        // MODIFICATION 2: Fonction pour charger la liste des personnes à contacter
+        // Source: commande_confirmed where adminContacted !== true
+        function loadContactList() {
+            const contactContainer = document.getElementById('contact-list');
+            contactContainer.innerHTML = '';
+
+            const confirmedRef = database.ref('commande_confirmed');
+
+            // Load registered members once and keep a set of their userIds
+            const registeredSet = new Set();
+            database.ref('save_member').once('value').then(snap => {
+                const members = snap.val() || {};
+                Object.values(members).forEach(m => {
+                    if (!m) return;
+                    if (m.userId !== undefined && m.userId !== null) registeredSet.add(String(m.userId));
+                    if (m.id !== undefined && m.id !== null) registeredSet.add(String(m.id));
+                });
+            }).catch(e => { console.warn('Could not load save_member for registered filtering', e); });
+
+            confirmedRef.on('value', (snapshot) => {
+                const confirmedOrders = snapshot.val() || {};
+                contactContainer.innerHTML = '';
+
+                // Filter orders where adminContacted !== true AND user is registered (has an entry in save_member)
+                const entries = Object.entries(confirmedOrders).filter(([k, v]) => {
+                    if (!v) return false;
+                    if (v.adminContacted === true) return false;
+                    // if there's a userId and it's found in registeredSet => show
+                    if (v.userId && registeredSet.has(String(v.userId))) return true;
+                    // fallback: some orders store user info; prefer to hide guests
+                    return false;
+                });
+
+                if (entries.length === 0) {
+                    contactContainer.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="fas fa-user-clock text-gray-300 text-3xl mb-2"></i>
+                            <p class="text-gray-500">Aucune personne pour l\'instant.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                entries.forEach(([key, order]) => {
+                    const clientName = order.clientName || order.name || 'Client';
+                    const phoneRaw = (order.phone || order.clientPhone || order.clientPhoneNumber || '').toString();
+                    const phone = phoneRaw.replace(/\D+/g, '');
+                    const pickup = order.pickup || 'Position actuelle';
+                    const destination = order.destination || '';
+                    const price = typeof order.price !== 'undefined' ? order.price : '';
+                    const tripType = order.tripType || 'aller simple';
+                    const time = order.confirmedAt || order.finishedAt || order.timestamp || '';
+                    const formattedTime = time ? new Date(time).toLocaleString('fr-FR') : '';
+
+                    const contactItem = document.createElement('div');
+                    contactItem.className = 'contact-item';
+                    contactItem.id = `contact-${key}`;
+
+                    contactItem.innerHTML = `
+                        <div class="contact-info">
+                            <div class="contact-name">${clientName} <span class="text-xs text-gray-500">(#${key})</span></div>
+                            <div class="contact-phone">${phone || 'N° client manquant'}</div>
+                            <div class="text-xs text-gray-500">${pickup} → ${destination} • ${price} $ • ${tripType} ${formattedTime ? '• ' + formattedTime : ''}</div>
+                        </div>
+                        <div>
+                            ${phone ? `<button class="contact-btn" data-key="${key}" data-phone="${phone}"><i class="fab fa-whatsapp"></i> Contacter</button>` : `<span class="text-sm text-gray-400">N° client manquant</span>`}
+                        </div>
+                    `;
+
+                    contactContainer.appendChild(contactItem);
+                });
+
+                // Wire contact buttons (set adminContacted=true and open WhatsApp)
+                contactContainer.querySelectorAll('.contact-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        const key = btn.dataset.key;
+                        const phone = btn.dataset.phone;
+                        if (!key || !phone) return;
+                        // Build message
+                        const order = confirmedOrders[key] || {};
+                        const pickup = order.pickup || '';
+                        const dest = order.destination || '';
+                        const price = typeof order.price !== 'undefined' ? order.price : '';
+                        const tripType = order.tripType || '';
+                        const time = order.confirmedAt || order.finishedAt || order.timestamp || '';
+                        const formattedTime = time ? new Date(time).toLocaleString('fr-FR') : '';
+
+                        const message = `Bonjour, votre commande est prête ! Voici les détails de votre course : ${pickup}, ${dest}, ${price} $, ${tripType}, ${formattedTime}`;
+
+                        // Open WhatsApp
+                        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+
+                        // Set adminContacted = true
+                        try {
+                            await database.ref(`commande_confirmed/${key}/adminContacted`).set(true);
+                            // remove from UI immediately
+                            const el = document.getElementById(`contact-${key}`);
+                            if (el) el.remove();
+                        } catch (err) {
+                            console.error('Erreur setting adminContacted', err);
+                            showNotification('Erreur lors de la mise à jour', 'error');
+                        }
+                    });
+                });
+            });
         }
         
         async function calculateTotalEarnings() {
@@ -1266,43 +1386,6 @@
                             }
                         }
                     }
-                });
-            });
-        }
-        
-        function loadRecentDrivers() {
-            const driversRef = database.ref('drivers');
-            const container = document.getElementById('recent-drivers');
-            container.innerHTML = '';
-            
-            driversRef.orderByChild('createdAt').limitToLast(5).once('value').then(snapshot => {
-                const drivers = snapshot.val() || {};
-                
-                if (Object.keys(drivers).length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-8">Aucun chauffeur récent</p>';
-                    return;
-                }
-                
-                Object.entries(drivers).forEach(([key, driver]) => {
-                    const driverElement = document.createElement('div');
-                    driverElement.className = 'flex items-center p-3 border border-gray-200 rounded-lg';
-                    driverElement.innerHTML = `
-                        <img src="${driver.photoURL}" alt="${driver.firstname}" class="w-12 h-12 rounded-full object-cover mr-4">
-                        <div class="flex-1">
-                            <h4 class="font-medium">${driver.firstname} ${driver.lastname}</h4>
-                            <p class="text-sm text-gray-600">${driver.city}</p>
-                        </div>
-                        <div>
-                            ${driver.status === 'pending' ? 
-                                '<span class="status-badge badge-pending">En attente</span>' : 
-                                driver.status === 'available' ? 
-                                '<span class="status-badge badge-confirmed">Disponible</span>' :
-                                driver.status === 'busy' ? 
-                                '<span class="status-badge badge-busy">Occupé</span>' :
-                                '<span class="status-badge badge-offline">Inactif</span>'}
-                        </div>
-                    `;
-                    container.appendChild(driverElement);
                 });
             });
         }
@@ -1553,7 +1636,15 @@
             const tripsRef = database.ref('commande_confirmed');
             tripsRef.once('value').then(snapshot => {
                 const trips = snapshot.val() || {};
-                const finishedTrips = Object.values(trips).filter(trip => trip.status === 'finished');
+                // preserve keys so we can delete by key
+                const finishedTrips = [];
+                snapshot.forEach(child => {
+                    const t = child.val();
+                    if (t && t.status === 'finished') {
+                        t.key = child.key;
+                        finishedTrips.push(t);
+                    }
+                });
                 allTrips = finishedTrips;
                 
                 if (finishedTrips.length === 0) {
@@ -1574,7 +1665,8 @@
                     });
                     
                     const tripElement = document.createElement('div');
-                    tripElement.className = 'history-card p-4 bg-white rounded-lg shadow-sm';
+                    tripElement.className = 'history-card p-4 bg-white rounded-lg shadow-sm relative';
+                    tripElement.setAttribute('data-key', trip.key || '');
                     tripElement.innerHTML = `
                         <div class="flex justify-between items-start">
                             <div>
@@ -1582,7 +1674,7 @@
                                 <p class="text-sm text-gray-600">${trip.pickup} → ${trip.destination}</p>
                             </div>
                             <div class="text-right">
-                                <p class="font-bold text-primary">${trip.price || '0'} $</p>
+                                <p class="font-bold text-primary" style="margin-right:36px;">${trip.price || '0'} $</p>
                                 <p class="text-xs text-gray-500">${formattedDate}</p>
                             </div>
                         </div>
@@ -1599,10 +1691,41 @@
                                 </div>` : ''
                             }
                         </div>
+                        <!-- MODIFICATION 6: Bouton de suppression pour les commandes terminées -->
+                        <button class="delete-history-btn absolute top-4 right-4" data-key="${trip.key || ''}" style="right:8px;">
+                            <i class="fas fa-trash"></i>
+                            Supprimer
+                        </button>
                     `;
                     historyContainer.appendChild(tripElement);
                 });
+                
+                // Ajouter les écouteurs d'événements pour les boutons de suppression
+                document.querySelectorAll('.delete-history-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const key = this.getAttribute('data-key');
+                        if (key) {
+                            deleteHistoryOrder(key);
+                        }
+                    });
+                });
             });
+        }
+        
+        // MODIFICATION 6: Fonction pour supprimer une commande de l'historique
+        function deleteHistoryOrder(key) {
+            if (confirm("Êtes-vous sûr de vouloir supprimer cette commande de l'historique ? Cette action est irréversible.")) {
+                database.ref(`commande_confirmed/${key}`).remove()
+                    .then(() => {
+                        showNotification("Commande supprimée de l'historique avec succès", 'success');
+                        // Recharger l'historique pour mettre à jour l'affichage
+                        loadHistory();
+                    })
+                    .catch(error => {
+                        console.error("Erreur lors de la suppression de la commande:", error);
+                        showNotification("Erreur lors de la suppression", 'error');
+                    });
+            }
         }
         
         function exportToWord(data, title, fileName) {
@@ -1860,32 +1983,22 @@
             
             ordersContainer.innerHTML = '';
 
-            // also render confirmed orders area
-            try { renderConfirmedOrders(); } catch (e) { console.error('renderConfirmedOrders error', e); }
+            // MODIFICATION 1: Supprimer l'affichage des commandes confirmées
+            // Ne plus appeler renderConfirmedOrders()
 
-            // Ensure admin notifications area exists (for newly confirmed orders)
-            let notifyArea = document.getElementById('admin-confirm-notifications');
-            if (!notifyArea) {
-                notifyArea = document.createElement('div');
-                notifyArea.id = 'admin-confirm-notifications';
-                notifyArea.className = 'admin-confirm-notifications';
-                // insert above orders list
-                ordersContainer.parentNode.insertBefore(notifyArea, ordersContainer);
-            }
-            const adminNotifKeys = new Set();
+            // NOTE: removed automatic admin notification area for priceConfirmed — admins should assign drivers manually
             
             let orders = {};
             
             const updateOrdersList = () => {
                 ordersContainer.innerHTML = '';
-                // Filtrer les commandes confirmées / terminées / prix confirmés : laisser uniquement en historique
-                // Also skip any keys that exist in commande_confirmed to avoid duplicates
+                // MODIFICATION 1: Filtrer les commandes pour exclure les commandes confirmées
+                // Ne montrer que les commandes en attente, en cours, ou non confirmées
                 const filteredOrders = Object.entries(orders).filter(([key, order]) => {
                     if (!order) return false;
                     if (confirmedKeys.has(key)) return false;
                     if (order.source === 'commande_confirmed') return false;
-                    if (order.status === 'confirmed' || order.status === 'finished') return false;
-                    if (order.priceConfirmed === true) return false;
+                        if (order.status === 'confirmed' || order.status === 'finished') return false;
                     return true;
                 });
                 
@@ -1922,28 +2035,8 @@
                 updateOrdersList();
             });
 
-            // Watch for newly priceConfirmed orders to show admin notifications
-            unconfirmedRef.on('child_added', snapshot => {
-                try {
-                    const key = snapshot.key;
-                    const order = snapshot.val() || {};
-                    if (order.priceConfirmed && !adminNotifKeys.has(key)) {
-                        adminNotifKeys.add(key);
-                        showAdminConfirmNotification(key, order);
-                    }
-                } catch(e) { console.error('admin child_added notif error', e); }
-            });
-
-            unconfirmedRef.on('child_changed', snapshot => {
-                try {
-                    const key = snapshot.key;
-                    const order = snapshot.val() || {};
-                    if (order.priceConfirmed && !adminNotifKeys.has(key)) {
-                        adminNotifKeys.add(key);
-                        showAdminConfirmNotification(key, order);
-                    }
-                } catch(e) { console.error('admin child_changed notif error', e); }
-            });
+            // Do NOT automatically notify admin when a client confirms the price.
+            // The order will remain in the main list (including priceConfirmed=true) until a driver is assigned and accepts.
             
             ordersRef.on('value', (snapshot) => {
                 const commandeOrders = snapshot.val() || {};
@@ -1981,6 +2074,10 @@
                     <div>
                         <div class="text-sm text-gray-700 font-semibold">${order.clientName || 'Client'}</div>
                         <div class="text-xs text-gray-500">${order.pickup || '—'} → ${order.destination || '—'}</div>
+                        <div class="text-xs text-blue-600">
+                            <i class="fas ${order.roundTrip ? 'fa-exchange-alt' : 'fa-long-arrow-alt-right'} mr-1"></i>
+                            ${order.roundTrip ? 'Aller-retour' : 'Aller simple'}
+                        </div>
                     </div>
                 </div>
                 <div class="order-actions">
@@ -2087,11 +2184,31 @@
                             </div>
                         </div>
                         <div>
-                            <!-- removed '+' propose button to avoid accidental closing and clutter; propose via details panel actions -->
-                            <button class="btn-propose-driver px-2 py-1 rounded-md bg-primary text-white visually-hidden" data-driver-id="${did}" ${!order.priceConfirmed ? 'disabled title="Prix non confirmé" style="opacity:.5;cursor:not-allowed;"' : ''} aria-hidden="true">+</button>
+                            <button class="assign-plus-btn inline-flex items-center justify-center bg-primary text-white rounded-full w-7 h-7 text-sm" data-did="${did}" title="Assigner ce chauffeur">+</button>
                         </div>
                     `;
                     driverListEl.appendChild(row);
+                    // wire assign '+' button
+                    const plusBtn = row.querySelector('.assign-plus-btn');
+                    if (plusBtn) {
+                        // disable if price not confirmed
+                        if (!order.priceConfirmed) {
+                            plusBtn.disabled = true;
+                            plusBtn.classList.add('opacity-40', 'cursor-not-allowed');
+                            plusBtn.title = 'Prix non confirmé par le client';
+                        }
+                        plusBtn.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            if (!order.priceConfirmed) {
+                                return showNotification('Le client doit confirmer le prix avant dassigner un chauffeur.', 'error');
+                            }
+                            const driverId = plusBtn.dataset.did;
+                            const driverObj = drivers[driverId];
+                            if (!driverObj) return showNotification('Chauffeur introuvable', 'error');
+                            // call assign flow: assigns driver to order (will keep details open)
+                            assignDriverToOrder(driverObj, key, null);
+                        });
+                    }
                 });
             }
             renderDriverList();
@@ -2169,14 +2286,6 @@
                 if (anyAccepted) confirmBtnEl.classList.remove('opacity-40'); else confirmBtnEl.classList.add('opacity-40');
             }
 
-            // attach propose buttons
-            driverListEl.addEventListener('click', (ev) => {
-                const btn = ev.target.closest('.btn-propose-driver');
-                if (!btn) return;
-                const driverId = btn.dataset.driverId;
-                proposeDriver(driverId);
-            });
-
             // poll or refresh on open
             refreshProposedList();
             // also listen to changes to update live
@@ -2227,52 +2336,6 @@
             });
 
             return container;
-        }
-
-        // Render confirmed orders list and add WhatsApp contact button
-        function renderConfirmedOrders() {
-            const confirmedRef = database.ref('commande_confirmed');
-            const confirmedContainer = document.getElementById('confirmed-orders-list');
-            if (!confirmedContainer) return;
-            confirmedRef.on('value', (snap) => {
-                confirmedContainer.innerHTML = '';
-                const data = snap.val() || {};
-                Object.entries(data).forEach(([key, order]) => {
-                    const item = document.createElement('div');
-                    item.className = 'confirmed-item';
-                    const clientName = order.clientName || 'Client';
-                    const number = key;
-                    const pickup = order.pickup || 'votre position actuelle';
-                    const dest = order.destination || '—';
-                    const driverName = (order.chauffeur && order.chauffeur[0]) || (order.assignedDrivers && order.assignedDrivers[0] && order.assignedDrivers[0].name) || '—';
-                    const departDate = order.date || order.confirmedAt || new Date().toLocaleString('fr-FR');
-                    const phoneRaw = order.phone || order.clientPhone || order.clientPhoneNumber || '';
-                    const phone = (phoneRaw + '').replace(/\s+/g, '');
-
-                    const info = document.createElement('div');
-                    info.className = 'confirmed-info';
-                    info.textContent = `#${number} — ${clientName}`;
-
-                    // Allow contacting the client from history whenever the phone is available
-                    const hasPhone = phone && phone.length > 3;
-                    const contact = document.createElement('a');
-                    contact.className = 'confirmed-contact';
-                    if (hasPhone) {
-                        const message = encodeURIComponent(`Votre commande #${number} (${pickup} → ${dest}) a été confirmée. ${driverName !== '—' ? 'M. '+driverName+' sera votre chauffeur.' : ''} Départ prévu: ${departDate}.`);
-                        contact.href = `https://wa.me/${phone}?text=${message}`;
-                        contact.target = '_blank';
-                        contact.innerHTML = `<i class="fab fa-whatsapp"></i> Contacter`;
-                    } else {
-                        contact.href = '#';
-                        contact.classList.add('opacity-50', 'cursor-not-allowed');
-                        contact.innerHTML = `<i class="fab fa-whatsapp"></i> N° client manquant`;
-                    }
-
-                    item.appendChild(info);
-                    item.appendChild(contact);
-                    confirmedContainer.appendChild(item);
-                });
-            });
         }
 
         // Show admin notification for newly confirmed price that prompts admin to inform client
@@ -2345,152 +2408,125 @@
             } catch(e) { console.error('showAdminConfirmNotification error', e); }
         }
         
+        // Keep a reference to Leaflet map instances per order key so we can update markers in realtime
+        const orderMaps = {};
         function loadOrderMap(key, order) {
             const mapElement = document.getElementById(`map-${key}`);
             if (!mapElement) return;
-            
+
+            // remove previous markers for this key
             if (mapMarkers[key]) {
-                mapMarkers[key].forEach(marker => marker.remove());
-                delete mapMarkers[key];
-            }
-            
-            mapMarkers[key] = [];
-            
-            // Center map: prefer order location if provided, otherwise pick a random available driver
-            let centerLat = 19.639994;
-            let centerLng = -72.044276;
-            let initialZoom = 13;
-            if (order && order.latitude && order.longitude) {
-                centerLat = order.latitude;
-                centerLng = order.longitude;
-                initialZoom = 14;
+                mapMarkers[key].forEach(m => {
+                    try { m.remove(); } catch(e){}
+                });
+                mapMarkers[key] = [];
             } else {
-                const driverCoords = Object.values(drivers).filter(d => d && d.latitude && d.longitude);
-                if (driverCoords.length > 0) {
-                    const randomDriver = driverCoords[Math.floor(Math.random() * driverCoords.length)];
-                    centerLat = randomDriver.latitude;
-                    centerLng = randomDriver.longitude;
-                    initialZoom = 13;
-                }
+                mapMarkers[key] = [];
             }
 
-            const map = L.map(mapElement).setView([centerLat, centerLng], initialZoom);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map);
-            mapMarkers[key].push(map);
+            // robust coordinate parsing for client
+            function parseClientCoords(o) {
+                if (!o) return null;
+                const candidates = [];
+                // common fields
+                if (o.latitude !== undefined && o.longitude !== undefined) candidates.push([o.latitude, o.longitude]);
+                if (o.lat !== undefined && o.lng !== undefined) candidates.push([o.lat, o.lng]);
+                if (o.lat !== undefined && o.long !== undefined) candidates.push([o.lat, o.long]);
+                if (o.coordinates && Array.isArray(o.coordinates) && o.coordinates.length >= 2) candidates.push([o.coordinates[0], o.coordinates[1]]);
+                if (o.coords && o.coords.lat !== undefined && o.coords.lng !== undefined) candidates.push([o.coords.lat, o.coords.lng]);
+                if (o.longitude !== undefined && o.latitude === undefined && typeof o.longitude === 'string') {
+                    // maybe stored as 'lat,lng' string
+                    const parts = o.longitude.split(',').map(s => s.trim());
+                    if (parts.length >= 2) return {lat: parseFloat(parts[0]), lng: parseFloat(parts[1])};
+                }
+                for (const c of candidates) {
+                    const lat = parseFloat(c[0]);
+                    const lng = parseFloat(c[1]);
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        // sanity: lat should be between -90 and 90
+                        if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) return {lat, lng};
+                        // occasionally stored reversed
+                        if (Math.abs(lng) <= 90 && Math.abs(lat) <= 180) return {lat: lng, lng: lat};
+                    }
+                }
+                return null;
+            }
 
-            // force map panes z-index lower than tab-bar
+            const clientCoords = parseClientCoords(order);
+
+            let center = [19.639994, -72.044276];
+            let zoom = 13;
+            if (clientCoords) {
+                center = [clientCoords.lat, clientCoords.lng];
+                zoom = 14;
+                console.log(`Client loaded: lat=${clientCoords.lat}, lng=${clientCoords.lng}`);
+            }
+
+            // create or reuse map instance
+            let map = orderMaps[key];
+            if (!map) {
+                map = L.map(mapElement).setView(center, zoom);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(map);
+                orderMaps[key] = map;
+            } else {
+                try { map.invalidateSize(); map.setView(center, zoom); } catch(e) {}
+            }
+
+            // ensure z-index of map panes
             try {
                 const container = map.getContainer();
-                if (container) {
-                    container.style.zIndex = 10;
-                    const panes = container.querySelectorAll('.leaflet-pane');
-                    panes.forEach(p => p.style.zIndex = 10);
-                }
-            } catch (e) {
-                console.warn('Could not set map pane z-index', e);
-            }
-            
-            // robust coordinate extraction: support latitude/longitude, lat/lng, or coords object
-            const coords = (() => {
-                try {
-                    if (!order) return null;
-                    if (order.latitude && order.longitude) return { lat: parseFloat(order.latitude), lng: parseFloat(order.longitude) };
-                    if (order.lat && order.lng) return { lat: parseFloat(order.lat), lng: parseFloat(order.lng) };
-                    if (order.coords && order.coords.lat && order.coords.lng) return { lat: parseFloat(order.coords.lat), lng: parseFloat(order.coords.lng) };
-                    if (Array.isArray(order.coordinates) && order.coordinates.length >= 2) return { lat: parseFloat(order.coordinates[0]), lng: parseFloat(order.coordinates[1]) };
-                    return null;
-                } catch(e) { return null; }
-            })();
+                if (container) container.style.zIndex = 10;
+            } catch(e) {}
 
-            if (coords) {
-                const clientMarker = L.marker([coords.lat, coords.lng], {
-                    icon: L.divIcon({
-                        html: '<div class="client-marker"><i class="fas fa-user"></i></div>',
-                        className: 'dummy',
-                        iconSize: [32, 32],
-                        iconAnchor: [16, 16]
-                    })
+            // add client marker if coords
+            if (clientCoords) {
+                const clientMarker = L.marker([clientCoords.lat, clientCoords.lng], {
+                    icon: L.divIcon({ html: '<div class="client-marker"><i class="fas fa-user"></i></div>', className: 'dummy', iconSize: [32,32], iconAnchor: [16,16] })
                 }).addTo(map);
                 mapMarkers[key].push(clientMarker);
-                
-                clientMarker.bindPopup(`
-                    <div class="driver-info">
-                        <strong>Client:</strong> ${order.clientName || 'Non spécifié'}<br>
-                        <strong>Destination:</strong> ${order.destination || 'Non spécifié'}
-                    </div>
-                `);
+                clientMarker.bindPopup(`<div class="driver-info"><strong>Client:</strong> ${order.clientName || 'Non spécifié'}<br><strong>Destination:</strong> ${order.destination || 'Non spécifié'}<br><strong>Lieu de départ:</strong> ${order.pickup || 'Non spécifié'}</div>`);
             }
-            
-            const driversToShow = Object.values(drivers).filter(driver => driver && driver.latitude && driver.longitude);
-            
-            driversToShow.forEach(driver => {
-                const statusIndicator = driver.status === 'available' ? 
-                    '<div class="status-indicator status-available"></div>' : 
-                    '<div class="status-indicator status-busy"></div>';
-                
-                // CORRECTION : Afficher le bouton d'assignation uniquement si le prix est confirmé
-                const showAssignButton = order.priceConfirmed === true;
-                
-                const driverMarker = L.marker([driver.latitude, driver.longitude], {
-                    icon: L.divIcon({
-                        html: `
-                            <div class="driver-photo-marker" style="background-image: url(${driver.photoURL})">
-                                ${statusIndicator}
-                            </div>
-                            <div class="driver-actions">
-                                <div class="driver-action-btn info" 
-                                     data-driver-id="${driver.id}" 
-                                     data-driver-name="${driver.firstname} ${driver.lastname}" 
-                                     data-driver-phone="${driver.phone}">
-                                    <i class="fas fa-eye"></i>
-                                </div>
-                                <!-- removed visible '+' assign button from driver marker to reduce clutter; assignment via details panel -->
-                                ${showAssignButton ? `
-                                    <div class="driver-action-btn assign-driver-btn visually-hidden" 
-                                         data-driver-id="${driver.id}" 
-                                         data-driver-name="${driver.firstname} ${driver.lastname}" 
-                                         data-driver-phone="${driver.phone}" aria-hidden="true">
-                                        <i class="fas fa-plus"></i>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        `,
-                        className: 'custom-div-icon',
-                        iconSize: [32, 32],
-                        iconAnchor: [16, 16]
-                    })
-                }).addTo(map);
-                mapMarkers[key].push(driverMarker);
-                
-                driverMarker.bindPopup(`
-                    <div class="driver-info">
-                        <strong>Chauffeur:</strong> ${driver.firstname} ${driver.lastname}<br>
-                        <strong>Statut:</strong> ${driver.status === 'available' ? 'Disponible' : 'Occupé'}<br>
-                        <strong>Téléphone:</strong> ${driver.phone}<br>
-                        <strong>Note:</strong> ${driver.rating || '0'}/5
-                    </div>
-                `);
-                
-                setTimeout(() => {
-                    const markerElement = driverMarker.getElement();
-                    if (markerElement) {
-                        const assignBtn = markerElement.querySelector('.assign-driver-btn');
-                        const infoBtn = markerElement.querySelector('.info');
-                        
-                        // assignBtn intentionally not wired here to keep details panel open and reduce accidental assignments
-                        // Instead, assignments are performed via the details panel UI where available.
-                        
-                        if (infoBtn) {
-                            infoBtn.addEventListener('click', function(e) {
-                                e.stopPropagation();
-                                driverMarker.openPopup();
-                            });
-                        }
-                    }
-                }, 100);
-            });
+
+            // show driver markers (blue) from current drivers state
+            function addDriverMarkers() {
+                // remove previous driver markers for this map
+                // remove previous driver markers only (leave client marker/map references intact)
+                mapMarkers[key] = mapMarkers[key].filter(m => {
+                    try {
+                        if (m && m._isDriverMarker) { m.remove(); return false; }
+                    } catch(e) {}
+                    return true;
+                });
+
+                Object.values(drivers).forEach(driver => {
+                    if (!driver) return;
+                    const lat = parseFloat(driver.latitude || driver.lat || driver.positionLat || driver.latitud || '');
+                    const lng = parseFloat(driver.longitude || driver.lng || driver.positionLng || driver.long || '');
+                    if (isNaN(lat) || isNaN(lng)) return;
+                    const marker = L.marker([lat, lng], {
+                        icon: L.divIcon({ html: `<div class="driver-photo-marker" style="background-image: url(${driver.photoURL||''})"></div>`, className: 'custom-div-icon', iconSize: [36,36], iconAnchor: [18,18] })
+                    }).addTo(map);
+                    // tag it so we can remove only driver markers next refresh
+                    marker._isDriverMarker = true;
+                    mapMarkers[key].push(marker);
+                    marker.bindPopup(`<div class="driver-info"><strong>Chauffeur:</strong> ${driver.firstname||''} ${driver.lastname||''}<br><strong>Statut:</strong> ${driver.status||''}<br><strong>Téléphone:</strong> ${driver.phone||''}</div>`);
+                });
+            }
+
+            addDriverMarkers();
+
+            // attach a lightweight drivers listener to update markers when positions change
+            // Note: we only attach one global listener in startDriversListener; here we reuse current drivers snapshot updates
+            // To support realtime updates of this map when drivers change, we'll listen to the drivers node and refresh markers
+            const refreshKey = `drivers_listener_for_map_${key}`;
+            if (!window[refreshKey]) {
+                window[refreshKey] = database.ref('drivers').on('value', snap => {
+                    drivers = snap.val() || drivers;
+                    try { addDriverMarkers(); } catch(e) { console.error('Error refreshing driver markers', e); }
+                });
+            }
         }
         
         function assignDriverToOrder(driver, orderKey, driverMarker) {
@@ -2498,21 +2534,8 @@
             const unconfirmedRef = database.ref(`commande_unconfirmed/${orderKey}`);
             const transferredRef = database.ref(`commande_transfered/${orderKey}`);
             
-            const assignBtn = driverMarker.getElement().querySelector('.assign-driver-btn');
-            if (assignBtn) {
-                assignBtn.innerHTML = '<i class="fas fa-check"></i>';
-                assignBtn.classList.add('check-animation');
-                
-                setTimeout(() => {
-                    assignBtn.innerHTML = '<i class="fab fa-whatsapp"></i>';
-                    assignBtn.classList.remove('check-animation');
-                    assignBtn.classList.add('whatsapp-btn');
-                    
-                    assignBtn.onclick = function() {
-                        window.open(`https://wa.me/${driver.phone}?text=Bonjour ${driver.firstname}, une nouvelle course vous a été assignée !`, '_blank');
-                    };
-                }, 500);
-            }
+            // MODIFICATION 3: Garder la fenêtre d'infos ouverte après assignation
+            // Ne pas fermer la fenêtre d'infos après l'assignation
             
             orderRef.once('value').then(orderSnapshot => {
                 if (orderSnapshot.exists()) {
@@ -2553,8 +2576,9 @@
             
             transferredRef.set(orderData)
                 .then(() => {
-                    // keep original source removed but keep details panel open
-                    sourceRef.remove();
+                    // MODIFICATION 3: Garder la fenêtre d'infos ouverte après assignation
+                    // Ne pas supprimer la source originale pour garder la fenêtre ouverte
+                    // sourceRef.remove(); // Cette ligne est commentée pour garder la fenêtre ouverte
 
                     const assignedDriversList = document.getElementById(`assigned-drivers-${orderKey}`);
                     if (assignedDriversList) {
@@ -2571,7 +2595,8 @@
                         `).join('');
                     }
 
-                    // ensure the details panel remains open after assignment
+                    // MODIFICATION 3: Garder la fenêtre d'infos ouverte après assignation
+                    // Assurer que le panneau de détails reste ouvert
                     if (openDetailsKeys.has(orderKey)) {
                         const orderCard = document.querySelector(`.order-card[data-order-key="${orderKey}"]`);
                         if (orderCard) {
