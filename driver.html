@@ -103,6 +103,7 @@
             margin-top: 10px;
             position: relative;
         }
+        /* overlay removed per user request: no textual hints on mini-maps */
         .request-map {
             height: 100%;
             width: 100%;
@@ -2709,7 +2710,8 @@
             } catch(e) { return null; }
         }
 
-        function startDriverPolling({intervalMs = 1000}) {
+    // Polling frequency reduced to avoid continuous map re-creation (default 5s)
+    function startDriverPolling({intervalMs = 5000}) {
             // Poll tables and update individual cards when snapshot differs
             if (__driverPollTimer) clearInterval(__driverPollTimer);
             const tables = ['commande','commande_unconfirmed','commande_transfered','commande_confirmed'];
@@ -2746,10 +2748,6 @@
                     <div class="mt-4">
                         <div id="map-${key}" class="request-map-container">
                             <div id="request-map-${key}" class="request-map"></div>
-                        </div>
-                        <div class="mt-2 text-sm">
-                            <span id="distance-${key}">${translations[currentLanguage].calculating}...</span> | 
-                            <span id="duration-${key}">${translations[currentLanguage].calculating}...</span>
                         </div>
                     </div>
                 `;
@@ -2885,6 +2883,10 @@
             });
         }
         
+        // Keep a cache of Leaflet map instances per request key so we don't recreate
+        // the mini-maps on every data refresh. This preserves user interactions
+        // like zooming or panning.
+        const requestMaps = {};
         function initRequestMaps() {
             document.querySelectorAll('.request-item').forEach(item => {
                 const key = item.dataset.key;
@@ -2905,46 +2907,63 @@
                         const commandRef = database.ref(`${t}/${key}`);
                         commandRef.once('value', snapshot => {
                             const command = snapshot.val();
-                            if (!command || !command.latitude || !command.longitude || !driverLocation) {
+                            if (!command || !driverLocation) {
                                 // try next table
                                 tryNext(i+1);
                                 return;
                             }
 
-                            const clientLocation = {
-                                lat: parseFloat(command.latitude),
-                                lng: parseFloat(command.longitude)
-                            };
-                    
-                    const requestMap = L.map(`request-map-${key}`).setView([
-                        (driverLocation.lat + clientLocation.lat) / 2,
-                        (driverLocation.lng + clientLocation.lng) / 2
-                    ], 14);
-                    
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    }).addTo(requestMap);
-                    
-                    L.marker([driverLocation.lat, driverLocation.lng], {
-                        icon: L.divIcon({
-                            html: '<div class="map-marker-icon driver"><i class="ri-car-line"></i></div>',
-                            className: 'dummy',
-                            iconSize: [32, 32],
-                            iconAnchor: [16, 16]
-                        })
-                    }).addTo(requestMap);
-                    
-                    L.marker([clientLocation.lat, clientLocation.lng], {
-                        icon: L.divIcon({
-                            html: '<div class="map-marker-icon client"><i class="ri-user-location-fill"></i></div>',
-                            className: 'dummy',
-                            iconSize: [32, 32],
-                            iconAnchor: [16, 16]
-                        })
-                    }).addTo(requestMap);
-                    
-                    calculateDistanceAndTime(driverLocation, clientLocation, key);
-                });
+                            // Use robust parsing if available, otherwise fall back to numeric fields
+                            const clientLat = command.latitude !== undefined ? parseFloat(command.latitude) : (command.lat !== undefined ? parseFloat(command.lat) : null);
+                            const clientLng = command.longitude !== undefined ? parseFloat(command.longitude) : (command.lng !== undefined ? parseFloat(command.lng) : null);
+                            if (clientLat === null || clientLng === null) {
+                                tryNext(i+1);
+                                return;
+                            }
+
+                            const clientLocation = { lat: clientLat, lng: clientLng };
+
+                            // If a map instance already exists for this request, reuse it and only update markers
+                            let requestMap = requestMaps[key];
+                            if (!requestMap) {
+                                requestMap = L.map(`request-map-${key}`).setView([
+                                    (driverLocation.lat + clientLocation.lat) / 2,
+                                    (driverLocation.lng + clientLocation.lng) / 2
+                                ], 14);
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                }).addTo(requestMap);
+                                requestMaps[key] = requestMap;
+                            } else {
+                                // preserve current view/zoom to avoid resetting when data refreshes
+                                try { requestMap.invalidateSize(); } catch(e){}
+                            }
+
+                            // add/update driver marker
+                            try {
+                                if (!requestMap._driverMarker) {
+                                    requestMap._driverMarker = L.marker([driverLocation.lat, driverLocation.lng], {
+                                        icon: L.divIcon({ html: '<div class="map-marker-icon driver"><i class="ri-car-line"></i></div>', className: 'dummy', iconSize: [32,32], iconAnchor: [16,16] })
+                                    }).addTo(requestMap);
+                                } else {
+                                    requestMap._driverMarker.setLatLng([driverLocation.lat, driverLocation.lng]);
+                                }
+                            } catch(e) { console.error('requestMap driver marker error', e); }
+
+                            // add/update client marker
+                            try {
+                                if (!requestMap._clientMarker) {
+                                    requestMap._clientMarker = L.marker([clientLocation.lat, clientLocation.lng], {
+                                        icon: L.divIcon({ html: '<div class="map-marker-icon client"><i class="ri-user-location-fill"></i></div>', className: 'dummy', iconSize: [32,32], iconAnchor: [16,16] })
+                                    }).addTo(requestMap);
+                                } else {
+                                    requestMap._clientMarker.setLatLng([clientLocation.lat, clientLocation.lng]);
+                                }
+                            } catch(e) { console.error('requestMap client marker error', e); }
+
+                            // Update bottom overlay distance/duration elements (placed inside map container)
+                            try { calculateDistanceAndTime(driverLocation, clientLocation, key); } catch(e) { console.error(e); }
+                        });
             })(0);
         });
 
@@ -2970,9 +2989,9 @@
             const distance = R * c;
             
             const timeMinutes = Math.round((distance / 40) * 60);
-            
-            distanceElement.textContent = `${distance.toFixed(1)} km`;
-            durationElement.textContent = `${timeMinutes} ${translations[currentLanguage].minutes}`;
+
+            if (distanceElement) distanceElement.textContent = `${distance.toFixed(1)} km`;
+            if (durationElement) durationElement.textContent = `${timeMinutes} ${translations[currentLanguage].minutes}`;
         }
         
         function deg2rad(deg) {
