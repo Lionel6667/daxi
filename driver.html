@@ -1,0 +1,3832 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Julmin Taxis - Espace Chauffeur</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-database-compat.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    
+    <style>
+        :where([class^="ri-"])::before { content: "\f3c2"; }
+        .hidden { display: none; }
+        .error-message { color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; }
+        .file-upload-container {
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            background: #f9fafb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .file-upload-container:hover {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        .file-upload-icon {
+            font-size: 2rem;
+            color: #ef4444;
+            margin-bottom: 0.5rem;
+        }
+        .preview-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin: 0 auto;
+            display: block;
+        }
+        .remove-photo-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .preview-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .request-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .request-card:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-pending {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+        .status-here {
+            background-color: #dbeafe;
+            color: #2563eb;
+        }
+        .status-finished {
+            background-color: #dcfce7;
+            color: #16a34a;
+        }
+        .request-map-container {
+            height: 200px;
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+            position: relative;
+        }
+        .request-map {
+            height: 100%;
+            width: 100%;
+            border-radius: 8px;
+        }
+        .leaflet-container {
+            z-index: 1;
+        }
+        #map-container {
+            height: 200px;
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+            position: relative;
+            transition: height 0.4s;
+        }
+        #map-container.fullscreen {
+            height: 100vh;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: 8px;
+        }
+        #toggleMapBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 999;
+            background: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .map-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .map-marker.driver {
+            background: #2563eb;
+            color: white;
+        }
+        .map-marker.client {
+            background: #ef4444;
+            color: white;
+        }
+        .app-banner {
+            background: linear-gradient(135deg, #ef4444, #f97316);
+            color: white;
+            padding: 12px 16px;
+            text-align: center;
+            position: relative;
+            z-index: 40;
+        }
+        .app-banner.hidden {
+            display: none;
+        }
+        .download-btn {
+            background: white;
+            color: #ef4444;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 8px;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .close-banner {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            cursor: pointer;
+        }
+        .slow-connection-tip {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        .map-marker-icon {
+            background: white;
+            border-radius: 50%;
+            padding: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .map-marker-icon.driver {
+            background: #2563eb;
+            color: white;
+        }
+        .map-marker-icon.client {
+            background: #ef4444;
+            color: white;
+        }
+        .connection-status {
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+        .connection-status i {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+        .whatsapp-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #25D366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .edit-icon {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .profile-container {
+            position: relative;
+            display: inline-block;
+        }
+        .app-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .app-modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .language-selector {
+            position: relative;
+        }
+        .notification-alert {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #ef4444;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+        }
+        .connection-testing {
+            display: flex;
+            align-items: center;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        .location-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        .location-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .location-modal-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 20px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .connection-status-icon {
+            animation: pulse 1.5s infinite;
+        }
+        .email-verification-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .email-verification-content {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .verification-icon {
+            font-size: 48px;
+            color: #3498db;
+            margin-bottom: 16px;
+        }
+        .verification-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 5px;
+        }
+        .gold-button {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        /* Loading spinner for buttons */
+        .btn-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .rounded-button {
+            border-radius: 8px;
+        }
+        .resend-otp {
+            display: block;
+            margin-top: 16px;
+            color: #3b82f6;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .ios-instruction-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        .ios-instruction-step i {
+            margin-right: 12px;
+            font-size: 20px;
+            color: #3b82f6;
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#ef4444',
+                        secondary: '#fca5a5'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px'
+                    }
+                }
+            }
+        };
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdGFcwfzj8b5eJXcmrS0LGRIxnTXZ6zac",
+            authDomain: "julmin-taxis.firebaseapp.com",
+            projectId: "julmin-taxis",
+            storageBucket: "julmin-taxis.appspot.com",
+            messagingSenderId: "392925120550",
+            appId: "1:392925120550:web:2935808aab4ead6d7d7ee7",
+            measurementId: "G-H7SBNVWQ06"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="notification-alert" class="notification-alert hidden">
+        <i class="ri-alarm-warning-fill mr-2"></i>
+        <span id="notification-text">Nouvelle commande disponible!</span>
+        <button id="dismiss-notification" class="ml-4">
+            <i class="ri-close-line"></i>
+        </button>
+    </div>
+
+    <div id="app-banner" class="app-banner hidden">
+        <div class="close-banner" id="close-banner">
+            <i class="ri-close-line"></i>
+        </div>
+        <p class="font-medium">Pour une meilleure expérience, téléchargez notre application !</p>
+        <a href="#" id="download-app" class="download-btn">
+            <i class="ri-download-line mr-1"></i> Télécharger l'app
+        </a>
+    </div>
+
+    <a href="https://wa.me/50944969696" target="_blank" class="whatsapp-icon">
+        <i class="ri-whatsapp-fill text-white text-3xl"></i>
+    </a>
+
+    <div id="app-modal" class="app-modal hidden">
+        <div class="app-modal-content">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Téléchargez notre application !</h3>
+            <p class="text-gray-600 mb-6">Pour une expérience optimale, nous vous recommandons de télécharger notre application mobile.</p>
+            <div class="flex flex-col space-y-3">
+                <button id="modal-download-btn" class="w-full bg-primary text-white py-3 rounded-lg font-medium">
+                    Télécharger
+                </button>
+                <button id="modal-close-btn" class="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-medium">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <section id="register-section" class="min-h-screen bg-gray-50 flex items-center justify-center px-4 hidden">
+        <div class="bg-white rounded-lg shadow-sm p-6 w-full max-w-md">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center" data-i18n="driver_registration">Inscription Chauffeur</h2>
+            <p class="text-gray-600 text-center mb-8" data-i18n="create_driver_account">Créez votre compte chauffeur</p>
+            
+            <form id="register-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="lastname" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="lastname">Nom</label>
+                        <input type="text" id="lastname" name="lastname" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <div id="lastname-error" class="error-message hidden" data-i18n="enter_lastname">Veuillez entrer votre nom</div>
+                    </div>
+                    
+                    <div>
+                        <label for="firstname" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="firstname">Prénom</label>
+                        <input type="text" id="firstname" name="firstname" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <div id="firstname-error" class="error-message hidden" data-i18n="enter_firstname">Veuillez entrer votre prénom</div>
+                    </div>
+                    
+                    <div>
+                        <label for="emailInput" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="email">Email</label>
+                        <input type="email" id="emailInput" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <div id="email-error" class="error-message hidden" data-i18n="enter_email">Veuillez entrer votre email</div>
+                    </div>
+                    
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="phone">Téléphone</label>
+                        <input type="tel" id="phone" name="phone" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <div id="phone-error" class="error-message hidden" data-i18n="valid_phone">Veuillez entrer un numéro de téléphone valide (8 chiffres minimum)</div>
+                    </div>
+                    
+                    <div>
+                        <label for="city" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="city">Ville</label>
+                        <input type="text" id="city" name="city" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <div id="city-error" class="error-message hidden" data-i18n="enter_city">Veuillez entrer votre ville</div>
+                    </div>
+                    
+                    <div>
+                        <label for="register-password" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="password">Mot de passe</label>
+                        <input type="password" id="register-password" name="password" required class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <div id="register-password-error" class="error-message hidden" data-i18n="password_min">Le mot de passe doit contenir au moins 4 caractères</div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="profile_photo">Photo de profil</label>
+                        <div id="file-upload-container" class="file-upload-container">
+                            <div class="file-upload-icon">
+                                <i class="ri-image-add-line"></i>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2" data-i18n="click_to_select">Cliquez pour sélectionner votre photo</p>
+                            <p class="text-xs text-gray-500" data-i18n="accepted_formats">Formats acceptés: JPG, PNG, GIF (max 5MB)</p>
+                            <input type="file" id="photo-upload" accept="image/*" class="hidden">
+                        </div>
+                        <div id="photo-preview" class="mt-4 hidden text-center">
+                            <div class="preview-container">
+                                <img id="preview-image" class="preview-image" src="" alt="Aperçu de la photo">
+                                <div class="remove-photo-btn" id="remove-photo">
+                                    <i class="ri-delete-bin-line"></i>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 text-center mt-2" data-i18n="photo_selected">Photo sélectionnée</p>
+                        </div>
+                        <div id="photo-error" class="error-message hidden" data-i18n="select_photo">Veuillez sélectionner une photo</div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <button type="button" id="switch-to-login" class="text-primary font-medium text-sm" data-i18n="have_account">J'ai déjà un compte</button>
+                        <button type="button" id="register-submit-btn" class="bg-primary text-white px-4 py-2 rounded-lg font-medium" data-i18n="register">S'inscrire</button>
+                    </div>
+                    
+                    <p class="text-gray-500 text-sm text-center" data-i18n="account_pending">Après inscription, votre compte sera en attente de validation par l'administrateur.</p>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Email Verification Modal -->
+    <div id="emailVerificationModal" class="email-verification-modal">
+        <div class="email-verification-content">
+            <i class="ri-mail-check-line verification-icon"></i>
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Vérification d'email</h3>
+            <p class="text-sm text-gray-600 mb-4">Nous avons envoyé un code de vérification à votre adresse email. Veuillez le saisir ci-dessous.</p>
+            <input type="text" id="otpInput" class="verification-input" placeholder="XXXXXX" maxlength="6">
+            <button id="verifyOtpBtn" class="w-full gold-button py-3 !rounded-button font-semibold mt-2">Vérifier</button>
+            <a href="#" id="resendOtp" class="resend-otp">Renvoyer le code</a>
+        </div>
+    </div>
+
+    <section id="login-section" class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div class="bg-white rounded-lg shadow-sm p-6 w-full max-w-md">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center" data-i18n="driver_login">Connexion Chauffeur</h2>
+            <p class="text-gray-600 text-center mb-8" data-i18n="connect_account">Connectez-vous à votre compte</p>
+            
+            <form id="login-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1" data-i18n="password">Mot de passe</label>
+                        <input type="password" id="login-password" name="password" required class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <div id="login-password-error" class="error-message hidden" data-i18n="enter_password">Veuillez entrer votre mot de passe</div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <button type="button" id="switch-to-register" class="text-primary font-medium text-sm" data-i18n="create_account">Créer un compte</button>
+                        <button type="button" id="login-submit-btn" class="bg-primary text-white px-4 py-2 rounded-lg font-medium" data-i18n="login">Se connecter</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <div id="main-interface" class="hidden">
+        <nav class="fixed top-0 w-full bg-white shadow-sm z-50">
+            <div class="flex items-center justify-between px-4 py-3">
+                <div class="flex items-center">
+                    <img src="Daxi -1.jpg" alt="Logo Julmin Taxis" class="h-10 w-10 object-contain">
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="language-selector">
+                        <select id="language-select" class="border border-gray-300 rounded-lg px-3 py-1">
+                            <option value="ht">Kreyòl Ayisyen</option>
+                            <option value="fr" selected>Français</option>
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                        </select>
+                    </div>
+                    <div class="profile-container">
+                        <img id="driver-profile" src="" alt="Profil" class="w-8 h-8 rounded-full object-cover">
+                        <div id="edit-profile-icon" class="edit-icon">
+                            <i class="ri-edit-line"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="pt-16 pb-20 px-4">
+            <section class="mb-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="current_status">Statut actuel</h2>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full bg-green-500 mr-3" id="status-indicator"></div>
+                            <span class="text-lg font-medium text-gray-800" id="status-text" data-i18n="available">Disponible</span>
+                        </div>
+                    </div>
+                    <button class="w-full bg-primary text-white py-4 !rounded-button font-semibold cursor-pointer" id="status-toggle" data-i18n="set_busy">
+                        Passer en mode Occupé
+                    </button>
+                </div>
+            </section>
+
+            <section class="mb-6" id="requests-section">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-800" data-i18n="received_requests">Commandes disponibles</h2>
+                        <span id="new-requests-count" class="bg-primary text-white text-xs px-2 py-1 rounded-full">0 nouvelles</span>
+                    </div>
+                    
+                    <div id="connection-status" class="connection-status">
+                        <i id="connection-icon" class="ri-wifi-line connection-status-icon"></i>
+                        <div id="connection-message">
+                            <span data-i18n="testing_connection">Nous testons votre connexion...</span>
+                        </div>
+                        <span id="connection-result" class="hidden ml-2"></span>
+                        <span id="connection-warning" class="text-red-500 text-sm hidden ml-2" data-i18n="avoid_gps_commands">(Évitez les commandes nécessitant la carte GPS)</span>
+                    </div>
+                    
+                    <div class="space-y-4" id="requests-list">
+                        <div class="text-center py-8 text-gray-500" id="no-requests-message" data-i18n="no_requests">
+                            Aucune commande disponible pour le moment
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-6 hidden" id="active-trip-section">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-800" data-i18n="current_trip">Course en cours</h2>
+                        <span id="trip-status-badge" class="status-badge status-pending" data-i18n="on_way">En route</span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex items-center text-sm text-gray-600 mb-2">
+                            <div class="w-4 h-4 flex items-center justify-center">
+                                <i class="ri-record-circle-fill text-green-500 text-xs"></i>
+                            </div>
+                            <span class="ml-2" id="pickup-address" data-i18n="current_position">Position actuelle</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600 mb-2">
+                            <div class="w-4 h-4 flex items-center justify-center">
+                                <i class="ri-map-pin-fill text-primary text-xs"></i>
+                            </div>
+                            <span class="ml-2" id="destination-address">Cathédrale de Cap-Haïtien</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600 mb-2">
+                            <div class="w-4 h-4 flex items-center justify-center">
+                                <i class="ri-route-line text-blue-500 text-xs"></i>
+                            </div>
+                            <span class="ml-2" id="trip-type">Type de trajet</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600 mb-4">
+                            <div class="w-4 h-4 flex items-center justify-center">
+                                <i class="ri-user-line text-gray-400 text-xs"></i>
+                            </div>
+                            <span class="ml-2" id="client-name" data-i18n="client">Client</span>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded p-3 mb-4">
+                            <p class="text-sm text-gray-600" id="client-notes" data-i18n="no_notes">Aucune note</p>
+                        </div>
+                    </div>
+                    
+                    <div id="map-container">
+                        <button id="toggleMapBtn" class="flex items-center justify-center">
+                            <i class="ri-fullscreen-line text-lg"></i>
+                        </button>
+                        <div id="map"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 gap-3 mt-4">
+                        <button class="w-full bg-green-500 text-white py-3 !rounded-button font-medium cursor-pointer" id="arrived-btn" data-i18n="arrived">
+                            Je suis arrivé
+                        </button>
+                        <button class="w-full bg-primary text-white py-3 !rounded-button font-medium cursor-pointer hidden" id="finish-trip-btn" data-i18n="finish_trip">
+                            Terminer le trajet
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="completed_trips">Parcours effectués</h2>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-4 bg-blue-50 rounded-lg">
+                            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                                <i class="ri-calendar-line text-blue-600 ri-lg"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800" id="today-trips">0</p>
+                            <p class="text-xs text-gray-600" data-i18n="today">Aujourd'hui</p>
+                        </div>
+                        
+                        <div class="text-center p-4 bg-green-50 rounded-lg">
+                            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                                <i class="ri-calendar-week-line text-green-600 ri-lg"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800" id="week-trips">0</p>
+                            <p class="text-xs text-gray-600" data-i18n="last_7_days">7 derniers jours</p>
+                        </div>
+                        
+                        <div class="text-center p-4 bg-purple-50 rounded-lg">
+                            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                                <i class="ri-calendar-month-line text-purple-600 ri-lg"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800" id="month-trips">0</p>
+                            <p class="text-xs text-gray-600" data-i18n="this_month">Ce mois</p>
+                        </div>
+                        
+                        <div class="text-center p-4 bg-orange-50 rounded-lg">
+                            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                                <i class="ri-trophy-line text-orange-600 ri-lg"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800" id="total-trips">0</p>
+                            <p class="text-xs text-gray-600" data-i18n="total">Total</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="mb-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="earnings">Gains</h2>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-4 bg-blue-50 rounded-lg">
+                            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                                <i class="ri-money-dollar-circle-line text-blue-600 ri-lg"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800" id="today-earnings">0 $</p>
+                            <p class="text-xs text-gray-600" data-i18n="today">Aujourd'hui</p>
+                        </div>
+                        
+                        <div class="text-center p-4 bg-green-50 rounded-lg">
+                            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                                <i class="ri-money-dollar-circle-line text-green-600 ri-lg"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800" id="week-earnings">0 $</p>
+                            <p class="text-xs text-gray-600" data-i18n="last_7_days">7 derniers jours</p>
+                        </div>
+                        
+                        <div class="text-center p-4 bg-purple-50 rounded-lg">
+                            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                                <i class="ri-money-dollar-circle-line text-purple-600 ri-lg"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800" id="month-earnings">0 $</p>
+                            <p class="text-xs text-gray-600" data-i18n="this_month">Ce mois</p>
+                        </div>
+                        
+                        <div class="text-center p-4 bg-orange-50 rounded-lg">
+                            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                                <i class="ri-money-dollar-circle-line text-orange-600 ri-lg"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800" id="total-earnings">0 $</p>
+                            <p class="text-xs text-gray-600" data-i18n="total">Total</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="recent_history">Historique récent</h2>
+                    
+                    <div class="space-y-4" id="history-list">
+                        <div class="text-center py-8 text-gray-500" id="no-history-message" data-i18n="no_history">
+                            Aucun historique pour le moment
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="recent_reviews">Avis récents</h2>
+                    <div class="space-y-4" id="reviews-list">
+                        <div class="text-center py-8 text-gray-500" id="no-reviews-message" data-i18n="no_reviews">
+                            Aucun avis pour le moment
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="apk-download-section" class="mb-6 hidden">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="download_app">Télécharger l'application</h2>
+                    <p class="text-gray-600 mb-4" data-i18n="app_experience">Téléchargez l'application android Julmin Taxis pour une meilleure expérience.</p>
+                    <a href="Driver Julmin Taxi.apk" id="apk-download-btn" class="w-full bg-green-500 text-white py-3 !rounded-button font-medium text-center block">
+                        <i class="ri-download-line mr-2"></i><span data-i18n="download_apk">Télécharger l'APK</span>
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- iOS Install Modal -->
+    <div id="iosInstallModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">Installer l'APK du site sur votre iPhone</h3>
+                <button class="close-modal text-gray-500 hover:text-gray-700" id="closeIosModalBtn">
+                    <i class="ri-close-line ri-lg"></i>
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Vous pouvez installer l'APK de notre site directement sur votre iPhone pour y accéder plus rapidement, comme une application.</p>
+            
+            <div class="ios-instruction-step">
+                <i class="ri-safari-line"></i>
+                <span>1. Ouvrez ce site dans Safari (nécessaire pour l'installation).</span>
+            </div>
+            
+            <div class="ios-instruction-step">
+                <i class="ri-share-box-line"></i>
+                <span>2. Appuyez sur le bouton Partager (icône carré avec une flèche télécharger).</span>
+            </div>
+            
+            <div class="ios-instruction-step">
+                <i class="ri-home-heart-line"></i>
+                <span>3. Sélectionnez « Installer l'APK sur l'écran d'accueil ».</span>
+            </div>
+            
+            <div class="ios-instruction-step">
+                <i class="ri-add-circle-line"></i>
+                <span>4. Appuyez sur Ajouter pour finaliser l'installation.</span>
+            </div>
+            
+            <button id="closeIosModalConfirmBtn" class="w-full gold-button py-3 !rounded-button font-semibold mt-4">
+                Fermer
+            </button>
+        </div>
+    </div>
+
+    <div id="price-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="accept_order">Accepter la commande</h3>
+            <div class="mb-4">
+                <p class="text-gray-600" data-i18n="admin_price">Prix fixé par l'administration:</p>
+                <p class="font-bold text-primary" id="admin-price">0 HTG</p>
+            </div>
+            <div class="flex space-x-3">
+                <button id="cancel-price" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-medium" data-i18n="cancel">Annuler</button>
+                <button id="accept-order" class="flex-1 bg-primary text-white py-3 rounded-lg font-medium" data-i18n="accept">Accepter</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="profile-edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="change_profile">Changer la photo de profil</h3>
+            <div id="edit-photo-container" class="file-upload-container mb-4">
+                <div class="file-upload-icon">
+                    <i class="ri-image-add-line"></i>
+                </div>
+                <p class="text-sm text-gray-600 mb-2" data-i18n="click_to_select">Cliquez pour sélectionner une nouvelle photo</p>
+                <p class="text-xs text-gray-500" data-i18n="accepted_formats">Formats acceptés: JPG, PNG, GIF (max 5MB)</p>
+                <input type="file" id="profile-edit-upload" accept="image/*" class="hidden">
+            </div>
+            <div id="edit-photo-preview" class="mt-4 hidden text-center">
+                <div class="preview-container">
+                    <img id="edit-preview-image" class="preview-image" src="" alt="Aperçu de la photo">
+                    <div class="remove-photo-btn" id="remove-edit-photo">
+                        <i class="ri-delete-bin-line"></i>
+                    </div>
+                    </div>
+                </div>
+                <div class="flex space-x-3 mt-4">
+                    <button id="cancel-edit" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-medium" data-i18n="cancel">Annuler</button>
+                    <button id="save-edit" class="flex-1 bg-primary text-white py-3 rounded-lg font-medium" data-i18n="save">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="location-modal" class="location-modal hidden">
+        <div class="location-modal-content">
+            <h3 class="text-xl font-bold text-gray-800 mb-4" data-i18n="location_permission">Autorisation de localisation</h3>
+            <p class="text-gray-600 mb-6" data-i18n="location_permission_message">Pour recevoir des commandes, Julmin Taxis a besoin d'accéder à votre position. Veuillez autoriser la géolocalisation dans les paramètres de votre navigateur.</p>
+            <button id="location-ok-btn" class="location-modal-btn" data-i18n="ok">J'ai compris</button>
+        </div>
+    </div>
+
+    <audio id="notification-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" preload="auto"></audio>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+    <script>
+        // Clés Mailjet
+        const MJ_APIKEY_PUBLIC = "2bce58a1f64d55a702dff8d682825462";
+        const MJ_APIKEY_PRIVATE = "742285c323ed6ab2f54fbe4427938fb4";
+        let unsubscribeUnconfirmedRequests = null;
+        let unsubscribePendingRequests = null;
+
+        // Génération d'OTP unique
+        async function generateUniqueOTP() {
+            let isUnique = false;
+            let otp = '';
+            
+            while (!isUnique) {
+                otp = Math.floor(100000 + Math.random() * 900000).toString();
+                
+                const saveMemberRef = database.ref('save_member');
+                const snapshot = await saveMemberRef.orderByChild('otp').equalTo(otp).once('value');
+                
+                if (!snapshot.exists()) {
+                    isUnique = true;
+                }
+            }
+            
+            return otp;
+        }
+
+        // Fonction pour envoyer l'OTP par email
+        async function sendOTPEmail(email, otp) {
+            // Construction du payload pour l'API Mailjet
+            const payload = {
+                Messages: [
+                    {
+                        From: {
+                            Email: "info@julmintaxi.com",
+                            Name: "Julmin Taxi"
+                        },
+                        To: [
+                            {
+                                Email: email,
+                                Name: email.split('@')[0]
+                            }
+                        ],
+                        Subject: "Votre code de vérification",
+                        TextPart: `Votre code de vérification est : ${otp}`,
+                        HTMLPart: `
+                            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                                <h2 style="color: #3498db;">Votre code de vérification</h2>
+                                <p>Bonjour,</p>
+                                <p>Votre code OTP pour vérifier votre email est :</p>
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #2c3e50; background: #f8f9fa; padding: 10px 20px; border-radius: 5px;">
+                                        ${otp}
+                                    </span>
+                                </div>
+                                <p>Ce code est valable pendant 10 minutes.</p>
+                                <p>Si vous n'avez pas demandé ce code, veuillez ignorer cet email.</p>
+                                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                                <p style="font-size: 12px; color: #7f8c8d;">© ${new Date().getFullYear()} Julmin Taxi. Tous droits réservés.</p>
+                            </div>
+                        `
+                    }
+                ]
+            };
+
+            // Encodage des credentials pour l'authentification Basic
+            const credentials = btoa(`${MJ_APIKEY_PUBLIC}:${MJ_APIKEY_PRIVATE}`);
+            
+            const response = await fetch("https://api.mailjet.com/v3.1/send", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Basic ${credentials}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.text();
+                throw new Error(`Erreur ${response.status}: ${errorData}`);
+            }
+
+            return response.json();
+        }
+
+        // Fonction pour afficher l'interface de vérification
+        function showEmailVerification(email) {
+            document.getElementById('register-section').classList.add('hidden');
+            document.getElementById('emailVerificationModal').style.display = 'flex';
+            
+            // Stocker l'email temporairement
+            document.getElementById('emailVerificationModal').dataset.email = email;
+        }
+
+        // Fonction pour revenir au formulaire d'inscription
+        function hideEmailVerification() {
+            document.getElementById('register-section').classList.remove('hidden');
+            document.getElementById('emailVerificationModal').style.display = 'none';
+        }
+
+        function handleIOSInstallBanner() {
+            const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+            const isInStandaloneMode = ('standalone' in window.navigator) && window.navigator.standalone;
+            
+            if (isIOS && !isInStandaloneMode) {
+                document.getElementById("installBanner").style.display = "block";
+                
+                document.getElementById("installBtn").addEventListener("click", () => {
+                    alert("Pour installer l'app :\n\n Cliquez sur le bouton PARTAGER (icône en bas au milieu)\n Choisissez 'Ajouter à l'écran d'accueil'");
+                });
+            }
+        }
+
+        // ===========================================
+        // GESTION SPÉCIALE iOS
+        // ===========================================
+
+        // Détecter si l'utilisateur est sur iOS
+        function isIOS() {
+            return [
+                'iPad Simulator',
+                'iPhone Simulator',
+                'iPod Simulator',
+                'iPad',
+                'iPhone',
+                'iPod'
+            ].includes(navigator.platform) || 
+            (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+        }
+
+        // Gérer l'affichage des boutons de téléchargement selon l'appareil
+        function handleDownloadButtons() {
+            const downloadApkBtn = document.getElementById('downloadApkBtn');
+            const iosInstallBtn = document.getElementById('iosInstallBtn');
+            
+            if (isIOS()) {
+                // Cacher le bouton APK Android et afficher le bouton iOS
+                if (downloadApkBtn) downloadApkBtn.style.display = 'none';
+                if (iosInstallBtn) iosInstallBtn.style.display = 'inline-flex';
+                
+                // Gérer le clic sur le bouton iOS
+                if (iosInstallBtn) {
+                    iosInstallBtn.addEventListener('click', function() {
+                        document.getElementById('iosInstallModal').style.display = 'flex';
+                    });
+                }
+            } else {
+                // Cacher le bouton iOS et afficher le bouton APK Android
+                if (downloadApkBtn) downloadApkBtn.style.display = 'inline-flex';
+                if (iosInstallBtn) iosInstallBtn.style.display = 'none';
+            }
+        }
+
+        // Gérer la modale d'installation iOS
+        function handleIOSInstallModal() {
+            const modal = document.getElementById('iosInstallModal');
+            const closeBtns = document.querySelectorAll('#closeIosModalBtn, #closeIosModalConfirmBtn');
+            
+            closeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                });
+            });
+        }
+
+        // Gérer la vérification d'email
+        function handleEmailVerification() {
+            const verifyBtn = document.getElementById('verifyOtpBtn');
+            const resendLink = document.getElementById('resendOtp');
+            const otpInput = document.getElementById('otpInput');
+            
+            verifyBtn.addEventListener('click', async function() {
+                const otp = otpInput.value.trim();
+                const email = document.getElementById('emailVerificationModal').dataset.email;
+                
+                if (!otp || otp.length !== 6) {
+                    alert('Veuillez entrer un code de vérification valide');
+                    return;
+                }
+                
+                // Vérifier l'OTP dans la base de données
+                const saveMemberRef = database.ref('driver_unconfirmed');
+                const snapshot = await saveMemberRef.orderByChild('otp').equalTo(otp).once('value');
+                
+                if (snapshot.exists()) {
+                    let otpValid = false;
+                    snapshot.forEach(child => {
+                        const user = child.val();
+                        if (user.otp === otp && user.email === email) {
+                            otpValid = true;
+                            
+                            // Mettre à jour le statut de vérification
+                            child.ref.update({
+                                emailVerified: true,
+                                otp: null
+                            });
+                            
+                            hideEmailVerification();
+                            alert('Email vérifié avec succès! Votre compte est en attente de validation par l\'administrateur.');
+                        }
+                    });
+                    
+                    if (!otpValid) {
+                        alert('Code de vérification incorrect');
+                    }
+                } else {
+                    alert('Erreur de vérification. Veuillez réessayer.');
+                }
+            });
+            
+            resendLink.addEventListener('click', async function() {
+                const email = document.getElementById('emailVerificationModal').dataset.email;
+                
+                // Générer un nouveau OTP
+                const newOtp = await generateUniqueOTP();
+                
+                // Mettre à jour l'OTP dans la base de données
+                const saveMemberRef = database.ref('driver_unconfirmed');
+                const snapshot = await saveMemberRef.orderByChild('email').equalTo(email).once('value');
+                
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        child.ref.update({
+                            otp: newOtp
+                        });
+                    });
+                    
+                    // Renvoyer l'email
+                    try {
+                        await sendOTPEmail(email, newOtp);
+                        alert('Nouveau code de vérification envoyé!');
+                    } catch (error) {
+                        console.error("Erreur lors de l'envoi de l'email:", error);
+                        alert("Erreur lors de l'envoi de l'email de vérification. Veuillez réessayer.");
+                    }
+                }
+            });
+        }
+
+        let currentIP = '';
+        let currentDriver = null;
+        let currentCommandKey = '';
+        let profilePhotoURL = '';
+        let currentTrip = null;
+        let driverStatus = 'available';
+        let driverLocation = null;
+        let map = null;
+        let routeControl = null;
+        let watchId = null;
+        let driverMarker = null;
+        let clientMarker = null;
+        let lastRouteUpdate = 0;
+        let connectionStatus = 'unknown';
+        let connectionSpeed = 0;
+        let newProfilePhoto = '';
+        let onlineStatus = true;
+        let notificationSound = null;
+        let __driverStatsRef = null;
+        let currentLanguage = 'fr';
+        
+        // Dictionnaires de traduction
+        const translations = {
+            ht: {
+                driver_registration: "Enskripsyon Chofè",
+                create_driver_account: "Kreye kont chofè ou",
+                lastname: "Non",
+                enter_lastname: "Tanpri antre non ou",
+                firstname: "Siyati",
+                enter_firstname: "Tanpri antre siyati ou",
+                email: "Imèl",
+                enter_email: "Tanpri antre imèl ou",
+                phone: "Telefòn",
+                valid_phone: "Tanpri antre yon nimewo telefòn valab (8 chif minimòm)",
+                city: "Vil",
+                enter_city: "Tanpri antre vil ou",
+                password: "Modpas",
+                password_min: "Modpas la dwe gen omwen 4 karaktè",
+                profile_photo: "Foto Pwofil",
+                click_to_select: "Klike pou chwazi foto ou",
+                accepted_formats: "Fòma aksepte: JPG, PNG, GIF (max 5MB)",
+                photo_selected: "Foto chwazi",
+                select_photo: "Tanpri chwazi yon foto",
+                have_account: "Mwen gen yon kont deja",
+                register: "Enskri",
+                account_pending: "Apre enskripsyon, kont ou pral an atant validasyon administrate a.",
+                driver_login: "Koneksyon Chofè",
+                connect_account: "Konekte nan kont ou",
+                enter_password: "Tanpri antre modpas ou",
+                create_account: "Kreye yon kont",
+                login: "Konekte",
+                current_status: "Estati aktyèl",
+                available: "Disponib",
+                set_busy: "Pase an mòd Okipe",
+                received_requests: "Kòmand resi",
+                testing_connection: "Nou ap teste koneksyon ou...",
+                connection_stable: "Koneksyon ou estab!",
+                connection_unstable: "Koneksyon ou pa stab! Evite kòmand ki bezwen kat GPS la.",
+                avoid_gps_commands: "Evite kòmand ki bezwen kat GPS la",
+                no_requests: "Pa gen kòmand disponib pou moman sa a",
+                current_trip: "Kous an kou",
+                on_way: "En route",
+                current_position: "Pozisyon aktyèl",
+                client: "Kliyan",
+                no_notes: "Pa gen nòt",
+                arrived: "Mwen rive",
+                finish_trip: "Fini wout la",
+                completed_trips: "Vwayaj fèt",
+                today: "Jodi a",
+                last_7_days: "7 dènye jou yo",
+                this_month: "Mwa sa a",
+                total: "Total",
+                earnings: "Lajan fè",
+                recent_history: "Istwa resan",
+                no_history: "Pa gen istwa pou moman an",
+                recent_reviews: "Avi resan",
+                no_reviews: "Pa gen avi pou moman an",
+                download_app: "Telechaje aplikasyon an",
+                app_experience: "Telechaje aplikasyon Julmin Taxis pou yon pi bon eksperyans.",
+                download_apk: "Telechaje APK a",
+                accept_order: "Aksepte kòmand la",
+                admin_price: "Pri administrasyon an:",
+                cancel: "Anile",
+                accept: "Aksepte",
+                change_profile: "Chanje foto pwofil",
+                save: "Sove",
+                location_permission: "Otorizasyon lokalizasyon",
+                location_permission_message: "Pou resevwa kòmand, Julmin Taxis bezwen aksede a pozisyon ou. Tanpri otorize jeyolokalizasyon nan paramèt navigatè ou.",
+                ok: "Mwen konprann",
+                trip_type: "Kalite wout",
+                one_way: "Ale sèl",
+                round_trip: "Ale-retou",
+                connection_excellent: "Koneksyon ekselan",
+                connection_good: "Koneksyon bon",
+                connection_poor: "Koneksyon pòv",
+                notification_permission_title: "Activer les notifications",
+                notification_permission_message: "Pour recevoir des alertes de nouvelles commandes, autorisez les notifications.",
+                notifications_enabled: "Notifications activées"
+            },
+            fr: {
+                driver_registration: "Inscription Chauffeur",
+                create_driver_account: "Créez votre compte chauffeur",
+                lastname: "Nom",
+                enter_lastname: "Veuillez entrer votre nom",
+                firstname: "Prénom",
+                enter_firstname: "Veuillez entrer votre prénom",
+                email: "Email",
+                enter_email: "Veuillez entrer votre email",
+                phone: "Téléphone",
+                valid_phone: "Veuillez entrer un numéro de téléphone valide (8 chiffres minimum)",
+                city: "Ville",
+                enter_city: "Veuillez entrer votre ville",
+                password: "Mot de passe",
+                password_min: "Le mot de passe doit contenir au moins 4 caractères",
+                profile_photo: "Photo de profil",
+                click_to_select: "Cliquez pour sélectionner votre photo",
+                accepted_formats: "Formats acceptés: JPG, PNG, GIF (max 5MB)",
+                photo_selected: "Photo sélectionnée",
+                select_photo: "Veuillez sélectionner une photo",
+                have_account: "J'ai déjà un compte",
+                register: "S'inscrire",
+                account_pending: "Après inscription, votre compte sera en attente de validation par l'administrateur.",
+                driver_login: "Connexion Chauffeur",
+                connect_account: "Connectez-vous à votre compte",
+                enter_password: "Veuillez entrer votre mot de passe",
+                create_account: "Créer un compte",
+                login: "Se connecter",
+                current_status: "Statut actuel",
+                available: "Disponible",
+                set_busy: "Passer en mode Occupé",
+                received_requests: "Commandes disponibles",
+                testing_connection: "Nous testons votre connexion...",
+                connection_stable: "Votre connexion est stable!",
+                connection_unstable: "Votre connexion est instable! Évitez les commandes nécessitant la carte GPS.",
+                avoid_gps_commands: "Évitez les commandes nécessitant la carte GPS",
+                no_requests: "Aucune commande disponible pour le moment",
+                current_trip: "Course en cours",
+                on_way: "En route",
+                current_position: "Position actuelle",
+                client: "Client",
+                no_notes: "Aucune note",
+                arrived: "Je suis arrivé",
+                finish_trip: "Terminer le trajet",
+                completed_trips: "Parcours effectués",
+                today: "Aujourd'hui",
+                last_7_days: "7 derniers jours",
+                this_month: "Ce mois",
+                total: "Total",
+                earnings: "Gains",
+                recent_history: "Historique récent",
+                no_history: "Aucun historique pour le moment",
+                recent_reviews: "Avis récents",
+                no_reviews: "Aucun avis pour le moment",
+                download_app: "Télécharger l'application",
+                app_experience: "Téléchargez l'application Julmin Taxis pour une meilleure expérience.",
+                download_apk: "Télécharger l'APK",
+                accept_order: "Accepter la commande",
+                admin_price: "Prix fixé par l'administration:",
+                cancel: "Annuler",
+                accept: "Accepter",
+                change_profile: "Changer la photo de profil",
+                save: "Enregistrer",
+                location_permission: "Autorisation de localisation",
+                location_permission_message: "Pour recevoir des commandes, Julmin Taxis a besoin d'accéder à votre position. Veuillez autoriser la géolocalisation dans les paramètres de votre navigateur.",
+                ok: "J'ai compris",
+                trip_type: "Type de trajet",
+                one_way: "Aller simple",
+                round_trip: "Aller-retour",
+                connection_excellent: "Connexion excellente",
+                connection_good: "Connexion bonne",
+                connection_poor: "Connexion mauvaise",
+                notification_permission_title: "Activer les notifications",
+                notification_permission_message: "Pour recevoir des alertes de nouvelles commandes, autorisez les notifications.",
+                notifications_enabled: "Notifications activées"
+            },
+            en: {
+                driver_registration: "Driver Registration",
+                create_driver_account: "Create your driver account",
+                lastname: "Last Name",
+                enter_lastname: "Please enter your last name",
+                firstname: "First Name",
+                enter_firstname: "Please enter your first name",
+                email: "Email",
+                enter_email: "Please enter your email",
+                phone: "Phone",
+                valid_phone: "Please enter a valid phone number (minimum 8 digits)",
+                city: "City",
+                enter_city: "Please enter your city",
+                password: "Password",
+                password_min: "Password must be at least 4 characters",
+                profile_photo: "Profile Photo",
+                click_to_select: "Click to select your photo",
+                accepted_formats: "Accepted formats: JPG, PNG, GIF (max 5MB)",
+                photo_selected: "Photo selected",
+                select_photo: "Please select a photo",
+                have_account: "I already have an account",
+                register: "Register",
+                account_pending: "After registration, your account will be pending admin approval.",
+                driver_login: "Driver Login",
+                connect_account: "Connect to your account",
+                enter_password: "Please enter your password",
+                create_account: "Create account",
+                login: "Login",
+                current_status: "Current Status",
+                available: "Available",
+                set_busy: "Set to Busy Mode",
+                received_requests: "Available Orders",
+                testing_connection: "Testing your connection...",
+                connection_stable: "Your connection is stable!",
+                connection_unstable: "Your connection is unstable! Avoid orders requiring GPS.",
+                avoid_gps_commands: "Avoid orders requiring GPS",
+                no_requests: "No orders available at the moment",
+                current_trip: "Current Trip",
+                on_way: "On the way",
+                current_position: "Current position",
+                client: "Client",
+                no_notes: "No notes",
+                arrived: "I have arrived",
+                finish_trip: "Finish trip",
+                completed_trips: "Completed Trips",
+                today: "Today",
+                last_7_days: "Last 7 days",
+                this_month: "This month",
+                total: "Total",
+                earnings: "Earnings",
+                recent_history: "Recent History",
+                no_history: "No history at the moment",
+                recent_reviews: "Recent Reviews",
+                no_reviews: "No reviews at the moment",
+                download_app: "Download App",
+                app_experience: "Download the Julmin Taxis app for a better experience.",
+                download_apk: "Download APK",
+                accept_order: "Accept Order",
+                admin_price: "Price set by administration:",
+                cancel: "Cancel",
+                accept: "Accept",
+                change_profile: "Change Profile Photo",
+                save: "Save",
+                location_permission: "Location Permission",
+                location_permission_message: "To receive orders, Julmin Taxis needs access to your location. Please enable geolocation in your browser settings.",
+                ok: "I understand",
+                trip_type: "Trip Type",
+                one_way: "One way",
+                round_trip: "Round trip",
+                connection_excellent: "Excellent connection",
+                connection_good: "Good connection",
+                connection_poor: "Poor connection",
+                notification_permission_title: "Enable notifications",
+                notification_permission_message: "To receive new order alerts, please enable notifications.",
+                notifications_enabled: "Notifications enabled"
+            },
+            es: {
+                driver_registration: "Registro de Conductor",
+                create_driver_account: "Crea tu cuenta de conductor",
+                lastname: "Apellido",
+                enter_lastname: "Por favor ingresa tu apellido",
+                firstname: "Nombre",
+                enter_firstname: "Por favor ingresa tu nombre",
+                email: "Correo electrónico",
+                enter_email: "Por favor ingresa tu correo electrónico",
+                phone: "Teléfono",
+                valid_phone: "Por favor ingresa un número de teléfono válido (mínimo 8 dígitos)",
+                city: "Ciudad",
+                enter_city: "Por favor ingresa tu ciudad",
+                password: "Contraseña",
+                password_min: "La contraseña debe tener al menos 4 caracteres",
+                profile_photo: "Foto de Perfil",
+                click_to_select: "Haz clic para seleccionar tu foto",
+                accepted_formats: "Formatos aceptados: JPG, PNG, GIF (max 5MB)",
+                photo_selected: "Foto seleccionada",
+                select_photo: "Por favor selecciona una foto",
+                have_account: "Ya tengo una cuenta",
+                register: "Registrarse",
+                account_pending: "Después del registro, tu cuenta estará pendiente de aprobación del administrador.",
+                driver_login: "Inicio de Sesión de Conductor",
+                connect_account: "Conéctate a tu cuenta",
+                enter_password: "Por favor ingresa tu contraseña",
+                create_account: "Crear cuenta",
+                login: "Iniciar Sesión",
+                current_status: "Estado Actual",
+                available: "Disponible",
+                set_busy: "Poner en Modo Ocupado",
+                received_requests: "Pedidos Disponibles",
+                testing_connection: "Probando tu conexión...",
+                connection_stable: "¡Tu conexión es estable!",
+                connection_unstable: "¡Tu conexión es inestable! Evita pedidos con GPS.",
+                avoid_gps_commands: "Evita pedidos con GPS",
+                no_requests: "No hay pedidos disponibles en este momento",
+                current_trip: "Viaje en Curso",
+                on_way: "En camino",
+                current_position: "Posición actual",
+                client: "Cliente",
+                no_notes: "Sin notas",
+                arrived: "He llegado",
+                finish_trip: "Terminar viaje",
+                completed_trips: "Viajes Completados",
+                today: "Hoy",
+                last_7_days: "Últimos 7 días",
+                this_month: "Este mes",
+                total: "Total",
+                earnings: "Ganancias",
+                recent_history: "Historial Reciente",
+                no_history: "No hay historial en este momento",
+                recent_reviews: "Reseñas Recientes",
+                no_reviews: "No hay reseñas en este momento",
+                download_app: "Descargar Aplicación",
+                app_experience: "Descarga la aplicación Julmin Taxis para una mejor experiencia.",
+                download_apk: "Descargar APK",
+                accept_order: "Aceptar Pedido",
+                admin_price: "Precio fijado por administración:",
+                cancel: "Cancelar",
+                accept: "Aceptar",
+                change_profile: "Cambiar Foto de Perfil",
+                save: "Guardar",
+                location_permission: "Permiso de Ubicación",
+                location_permission_message: "Para recibir pedidos, Julmin Taxis necesita acceder a tu ubicación. Por favor habilita la geolocalización en la configuración de tu navegador.",
+                ok: "Entiendo",
+                trip_type: "Tipo de Viaje",
+                one_way: "Solo ida",
+                round_trip: "Ida y vuelta",
+                connection_excellent: "Conexión excelente",
+                connection_good: "Buena conexión",
+                connection_poor: "Conexión pobre",
+                notification_permission_title: "Activar notificaciones",
+                notification_permission_message: "Para recibir alertas de nuevos pedidos, habilite las notificaciones.",
+                notifications_enabled: "Notificaciones activadas"
+            }
+        };
+
+        // Fonction de traduction
+        function translatePage(lang) {
+            currentLanguage = lang;
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                }
+            });
+        }
+
+        // Robust client coordinate parser (supports multiple field shapes)
+        function parseClientCoords(o) {
+            if (!o) return null;
+            const candidates = [];
+            if (o.latitude !== undefined && o.longitude !== undefined) candidates.push([o.latitude, o.longitude]);
+            if (o.lat !== undefined && o.lng !== undefined) candidates.push([o.lat, o.lng]);
+            if (o.lat !== undefined && o.long !== undefined) candidates.push([o.lat, o.long]);
+            if (o.coordinates && Array.isArray(o.coordinates) && o.coordinates.length >= 2) candidates.push([o.coordinates[0], o.coordinates[1]]);
+            if (o.coords && o.coords.lat !== undefined && o.coords.lng !== undefined) candidates.push([o.coords.lat, o.coords.lng]);
+            // sometimes stored as 'lat,lng' inside a string field
+            if (o.longitude !== undefined && o.latitude === undefined && typeof o.longitude === 'string') {
+                const parts = o.longitude.split(',').map(s => s.trim());
+                if (parts.length >= 2) return { lat: parseFloat(parts[0]), lng: parseFloat(parts[1]) };
+            }
+            for (const c of candidates) {
+                const lat = parseFloat(c[0]);
+                const lng = parseFloat(c[1]);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) return { lat, lng };
+                    if (Math.abs(lng) <= 90 && Math.abs(lat) <= 180) return { lat: lng, lng: lat }; // swapped
+                }
+            }
+            return null;
+        }
+
+        // Vérifier la connexion internet
+        function checkOnlineStatus() {
+            onlineStatus = navigator.onLine;
+            updateStatusBasedOnConnection();
+            window.addEventListener('online', () => {
+                onlineStatus = true;
+                updateStatusBasedOnConnection();
+            });
+            window.addEventListener('offline', () => {
+                onlineStatus = false;
+                updateStatusBasedOnConnection();
+            });
+        }
+        
+        function updateStatusBasedOnConnection() {
+            if (!currentDriver || !currentDriver.id) return;
+            
+            const driverRef = database.ref(`drivers/${currentDriver.id}`);
+            
+            if (onlineStatus) {
+                // Si en ligne, le statut devient disponible sauf si déjà occupé manuellement
+                if (driverStatus === 'available') {
+                    driverRef.update({ status: 'available' });
+                }
+            } else {
+                // Si hors ligne, le statut devient occupé
+                driverStatus = 'busy';
+                driverRef.update({ status: 'busy' });
+                updateStatusUI();
+                document.getElementById('requests-section').classList.add('hidden');
+            }
+        }
+        
+        async function getIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                console.error("Erreur lors de la récupération de l'IP:", error);
+                return null;
+            }
+        }
+        
+        async function checkDriver() {
+            try {
+                // Prefer explicit driverId stored locally (more reliable than IP lookup)
+                const storedDriverId = localStorage.getItem('driverId');
+                if (storedDriverId) {
+                    const ref = database.ref(`drivers/${storedDriverId}`);
+                    const snap = await ref.once('value');
+                    if (snap.exists()) {
+                        currentDriver = snap.val();
+                        currentDriver.id = snap.key || storedDriverId;
+                        if (currentDriver.status) driverStatus = currentDriver.status;
+                    }
+                } else {
+                    // Fallback: find driver by IP
+                    const driversRef = database.ref('drivers');
+                    const snapshot = await driversRef.orderByChild('ip').equalTo(currentIP).once('value');
+                    if (snapshot.exists()) {
+                        snapshot.forEach(child => {
+                            currentDriver = child.val();
+                            currentDriver.id = child.key;
+                            if (currentDriver.status) {
+                                driverStatus = currentDriver.status;
+                            }
+                        });
+                    }
+                }
+
+                // If we found a driver record, show main UI and initialize driver-specific features
+                if (currentDriver && currentDriver.id) {
+                    // persist driverId so reloads can reattach quickly
+                    try { localStorage.setItem('driverId', currentDriver.id); } catch(e){}
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('main-interface').classList.remove('hidden');
+                    document.getElementById('app-banner').classList.add('hidden');
+
+                    if (currentDriver.photoURL) {
+                        document.getElementById('driver-profile').src = currentDriver.photoURL;
+                    }
+
+                    updateStatusUI();
+
+                    if (driverStatus === 'busy') {
+                        document.getElementById('requests-section').classList.add('hidden');
+                    }
+
+                    requestDriverLocation();
+
+                    // Ask for notification permission once
+                    requestNotificationPermission();
+
+                    loadCommands();
+                    loadStatistics();
+                    loadActiveTrip();
+                    loadReviews();
+
+                    if (!currentDriver.apkDownloaded) {
+                        document.getElementById('app-modal').classList.remove('hidden');
+                    } else {
+                        document.getElementById('apk-download-section').classList.remove('hidden');
+                    }
+                }
+                else {
+                    // Fallback: try to find driver by stored phone number (helps when driverId not persisted)
+                    try {
+                        const storedPhone = localStorage.getItem('driverPhone');
+                        if (!currentDriver && storedPhone) {
+                            const norm = String(storedPhone).replace(/\D+/g,'').replace(/^0+/, '');
+                            const snap = await database.ref('drivers').orderByChild('phone').equalTo(norm).once('value');
+                            if (snap.exists()) {
+                                snap.forEach(child => {
+                                    currentDriver = child.val();
+                                    currentDriver.id = child.key;
+                                });
+                            }
+                        }
+                    } catch(e) { /* ignore fallback errors */ }
+                    if (currentDriver && currentDriver.id) {
+                        try { localStorage.setItem('driverId', currentDriver.id); } catch(e){}
+                        // re-run init path for driver
+                        document.getElementById('login-section').classList.add('hidden');
+                        document.getElementById('main-interface').classList.remove('hidden');
+                        if (currentDriver.photoURL) document.getElementById('driver-profile').src = currentDriver.photoURL;
+                        updateStatusUI();
+                        requestDriverLocation();
+                        requestNotificationPermission();
+                        loadCommands();
+                        loadStatistics();
+                        loadActiveTrip();
+                        loadReviews();
+                    }
+                }
+            } catch (error) {
+                console.error("Erreur lors de la vérification du chauffeur:", error);
+                alert(translations[currentLanguage].driver_check_error);
+            }
+        }
+        
+        function updateStatusUI() {
+            const indicator = document.getElementById('status-indicator');
+            const text = document.getElementById('status-text');
+            const button = document.getElementById('status-toggle');
+            
+            if (driverStatus === 'busy') {
+                indicator.className = 'w-4 h-4 rounded-full bg-red-500 mr-3';
+                text.textContent = translations[currentLanguage].busy || 'Occupé';
+                button.textContent = translations[currentLanguage].set_available || 'Passer en mode Disponible';
+                button.className = 'w-full bg-green-500 text-white py-4 !rounded-button font-semibold cursor-pointer';
+            } else {
+                indicator.className = 'w-4 h-4 rounded-full bg-green-500 mr-3';
+                text.textContent = translations[currentLanguage].available || 'Disponible';
+                button.textContent = translations[currentLanguage].set_busy || 'Passer en mode Occupé';
+                button.className = 'w-full bg-primary text-white py-4 !rounded-button font-semibold cursor-pointer';
+            }
+        }
+        
+        function requestDriverLocation() {
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(
+                    position => {
+                        driverLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        if (currentDriver && currentDriver.id) {
+                            const driverRef = database.ref(`drivers/${currentDriver.id}`);
+                            driverRef.update({ 
+                                latitude: driverLocation.lat,
+                                longitude: driverLocation.lng,
+                                lastLocationUpdate: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                        
+                        updateDriverPositionOnMap();
+                    },
+                    error => {
+                        console.error("Erreur de géolocalisation:", error);
+                        document.getElementById('location-modal').classList.remove('hidden');
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            } else {
+                document.getElementById('location-modal').classList.remove('hidden');
+            }
+        }
+        
+        function updateDriverPositionOnMap() {
+            if (!map || !driverLocation) return;
+            
+            if (driverMarker) {
+                driverMarker.setLatLng([driverLocation.lat, driverLocation.lng]);
+            } else {
+                driverMarker = L.marker([driverLocation.lat, driverLocation.lng], {
+                    icon: L.divIcon({
+                        html: '<div class="map-marker-icon driver"><i class="ri-car-line"></i></div>',
+                        className: 'dummy',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    })
+                }).addTo(map);
+            }
+            
+            if (currentTrip && currentTrip.latitude && currentTrip.longitude) {
+                const now = Date.now();
+                if (now - lastRouteUpdate > 5000) {
+                    updateMapRoute(driverLocation, { 
+                        lat: currentTrip.latitude, 
+                        lng: currentTrip.longitude 
+                    });
+                    lastRouteUpdate = now;
+                }
+            }
+        }
+        
+        function stopLocationTracking() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+        }
+        
+        function showError(fieldId, message) {
+            const errorElement = document.getElementById(fieldId + '-error');
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
+        
+        function hideErrors() {
+            const errorElements = document.querySelectorAll('.error-message');
+            errorElements.forEach(el => el.classList.add('hidden'));
+        }
+        
+        async function isPasswordUnique(password) {
+            try {
+                const driversRef = database.ref('drivers');
+                const driversSnapshot = await driversRef.orderByChild('password').equalTo(password).once('value');
+                
+                const unconfirmedRef = database.ref('drivers_unconfirmed');
+                const unconfirmedSnapshot = await unconfirmedRef.orderByChild('password').equalTo(password).once('value');
+                
+                return !(driversSnapshot.exists() || unconfirmedSnapshot.exists());
+            } catch (error) {
+                console.error("Erreur lors de la vérification du mot de passe:", error);
+                return false;
+            }
+        }
+        
+        function setupForms() {
+            const switchToLoginBtn = document.getElementById('switch-to-login');
+            const switchToRegisterBtn = document.getElementById('switch-to-register');
+            const fileUploadContainer = document.getElementById('file-upload-container');
+            const photoUpload = document.getElementById('photo-upload');
+            const photoPreview = document.getElementById('photo-preview');
+            const previewImage = document.getElementById('preview-image');
+            const removePhotoBtn = document.getElementById('remove-photo');
+            const registerSubmitBtn = document.getElementById('register-submit-btn');
+            const loginSubmitBtn = document.getElementById('login-submit-btn');
+            
+            switchToLoginBtn.addEventListener('click', function() {
+                document.getElementById('register-section').classList.add('hidden');
+                document.getElementById('login-section').classList.remove('hidden');
+                hideErrors();
+            });
+            
+            switchToRegisterBtn.addEventListener('click', function() {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('register-section').classList.remove('hidden');
+                hideErrors();
+                document.getElementById('app-banner').classList.add('hidden');
+            });
+            
+            fileUploadContainer.addEventListener('click', function() {
+                photoUpload.click();
+            });
+            
+            photoUpload.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    
+                    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    if (!validTypes.includes(file.type)) {
+                        showError('photo', translations[currentLanguage].invalid_format);
+                        return;
+                    }
+                    
+                    if (file.size > 5 * 1024 * 1024) {
+                        showError('photo', translations[currentLanguage].file_too_large);
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        profilePhotoURL = event.target.result;
+                        previewImage.src = profilePhotoURL;
+                        photoPreview.classList.remove('hidden');
+                        document.getElementById('photo-error').classList.add('hidden');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            removePhotoBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                photoUpload.value = '';
+                profilePhotoURL = '';
+                previewImage.src = '';
+                photoPreview.classList.add('hidden');
+            });
+            
+            registerSubmitBtn.addEventListener('click', async function() {
+                hideErrors();
+                
+                const lastname = document.getElementById('lastname').value;
+                const firstname = document.getElementById('firstname').value;
+                const email = document.getElementById('emailInput').value;
+                const phone = document.getElementById('phone').value;
+                const city = document.getElementById('city').value;
+                const password = document.getElementById('register-password').value;
+                
+                let hasError = false;
+                
+                if (!lastname) {
+                    showError('lastname', translations[currentLanguage].enter_lastname);
+                    hasError = true;
+                }
+                
+                if (!firstname) {
+                    showError('firstname', translations[currentLanguage].enter_firstname);
+                    hasError = true;
+                }
+                
+                if (!email) {
+                    showError('email', translations[currentLanguage].enter_email);
+                    hasError = true;
+                }
+                
+                if (!phone || !/^[0-9]{8,}$/.test(phone)) {
+                    showError('phone', translations[currentLanguage].valid_phone);
+                    hasError = true;
+                }
+                
+                if (!city) {
+                    showError('city', translations[currentLanguage].enter_city);
+                    hasError = true;
+                }
+                
+                if (!password || password.length < 4) {
+                    showError('register-password', translations[currentLanguage].password_min);
+                    hasError = true;
+                }
+                
+                if (!profilePhotoURL) {
+                    showError('photo', translations[currentLanguage].select_photo);
+                    hasError = true;
+                }
+                
+                if (hasError) return;
+                
+                const unique = await isPasswordUnique(password);
+                if (!unique) {
+                    showError('register-password', translations[currentLanguage].password_not_unique);
+                    return;
+                }
+                
+                proceedWithRegistration(password, profilePhotoURL, lastname, firstname, email, phone, city);
+            });
+            
+            // helper to toggle loading state on buttons
+            function setButtonLoading(btn, loading, labelText) {
+                if (!btn) return;
+                if (loading) {
+                    btn.disabled = true;
+                    btn.setAttribute('aria-busy', 'true');
+                    // save original HTML
+                    if (!btn.dataset.origHtml) btn.dataset.origHtml = btn.innerHTML;
+                    btn.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span>${labelText || btn.dataset.origHtml || ''}`;
+                } else {
+                    btn.disabled = false;
+                    btn.removeAttribute('aria-busy');
+                    if (btn.dataset.origHtml) {
+                        btn.innerHTML = btn.dataset.origHtml;
+                        delete btn.dataset.origHtml;
+                    }
+                }
+            }
+
+            loginSubmitBtn.addEventListener('click', async function() {
+                hideErrors();
+
+                const password = document.getElementById('login-password').value;
+
+                if (!password) {
+                    showError('login-password', translations[currentLanguage].enter_password);
+                    return;
+                }
+
+                try {
+                    setButtonLoading(loginSubmitBtn, true, translations[currentLanguage].logging_in || 'Connexion...');
+                    const ok = await proceedWithLogin(password);
+                    if (!ok) {
+                        // login failed
+                        alert(translations[currentLanguage].login_error);
+                    }
+                } catch (e) {
+                    console.error('Login error', e);
+                    alert(translations[currentLanguage].login_error || 'Erreur lors de la connexion');
+                } finally {
+                    setButtonLoading(loginSubmitBtn, false);
+                }
+            });
+        }
+        
+        async function proceedWithRegistration(password, photoURL, lastname, firstname, email, phone, city) {
+            // Générer un OTP
+            const otp = await generateUniqueOTP();
+            
+            if (currentIP) {
+                // Sauvegarder l'utilisateur avec email non vérifié
+                const driversUnconfirmedRef = database.ref('driver_unconfirmed').push();
+                const userId = driversUnconfirmedRef.key;
+                
+                driversUnconfirmedRef.set({
+                    nom: lastname,
+                    prenom: firstname,
+                    email: email,
+                    phone: phone,
+                    password: password,
+                    city: city,
+                    ip: currentIP,
+                    userId: userId,
+                    photoURL: photoURL,
+                    emailVerified: false,
+                    otp: otp,
+                    status: 'pending',
+                    date_inscription: new Date().toISOString()
+                })
+                .then(() => {
+                    // Envoyer l'email avec l'OTP
+                    try {
+                        sendOTPEmail(email, otp);
+                        
+                        // Afficher la modale de vérification
+                        showEmailVerification(email);
+                        
+                        // Stocker temporairement les infos utilisateur
+                        sessionStorage.setItem('tempUser', JSON.stringify({
+                            nom: lastname,
+                            prenom: firstname,
+                            email: email,
+                            phone: phone,
+                            password: password,
+                            city: city,
+                            ip: currentIP,
+                            userId: userId
+                        }));
+                        
+                    } catch (error) {
+                        console.error("Erreur lors de l'envoi de l'email:", error);
+                        alert("Erreur lors de l'envoi de l'email de vérification. Veuillez réessayer.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Erreur lors de l'inscription:", error);
+                    alert(translations[currentLanguage].registration_error);
+                });
+            } else {
+                alert('Erreur lors de la création du compte. Veuillez réessayer.');
+            }
+        }
+        
+        async function proceedWithLogin(password) {
+            try {
+                const driversRef = database.ref('drivers');
+                const snapshot = await driversRef.orderByChild('password').equalTo(password).once('value');
+                let driverFound = false;
+
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        currentDriver = child.val();
+                        currentDriver.id = child.key;
+                        driverFound = true;
+
+                        if (currentDriver.status) {
+                            driverStatus = currentDriver.status;
+                        }
+
+                        document.getElementById('login-section').classList.add('hidden');
+                        document.getElementById('main-interface').classList.remove('hidden');
+                        document.getElementById('app-banner').classList.add('hidden');
+
+                        if (currentDriver.photoURL) {
+                            document.getElementById('driver-profile').src = currentDriver.photoURL;
+                        }
+
+                        updateStatusUI();
+
+                        if (driverStatus === 'busy') {
+                            document.getElementById('requests-section').classList.add('hidden');
+                        }
+
+                        requestDriverLocation();
+
+                        loadCommands();
+                        loadStatistics();
+                        loadActiveTrip();
+                        loadReviews();
+
+                        if (!currentDriver.apkDownloaded) {
+                            document.getElementById('app-modal').classList.remove('hidden');
+                        } else {
+                            document.getElementById('apk-download-section').classList.remove('hidden');
+                        }
+                    });
+                }
+
+                return driverFound;
+            } catch (error) {
+                console.error('Erreur lors du login:', error);
+                return false;
+            }
+        }
+        
+        function measureConnectionSpeed() {
+            const iconElement = document.getElementById('connection-icon');
+            const messageElement = document.getElementById('connection-message');
+            const resultElement = document.getElementById('connection-result');
+            const warningElement = document.getElementById('connection-warning');
+            
+            // Afficher l'animation de test
+            iconElement.className = "ri-wifi-line connection-status-icon";
+            messageElement.innerHTML = `<span data-i18n="testing_connection">Nous testons votre connexion...</span>`;
+            resultElement.classList.add('hidden');
+            warningElement.classList.add('hidden');
+            
+            const imageAddr = "https://upload.wikimedia.org/wikipedia/commons/2/2d/Snake_River_%285mb%29.jpg";
+            const downloadSize = 4995374;
+            
+            const startTime = new Date().getTime();
+            const download = new Image();
+            
+            download.onload = function() {
+                const endTime = new Date().getTime();
+                const duration = (endTime - startTime) / 1000;
+                const bitsLoaded = downloadSize * 8;
+                connectionSpeed = (bitsLoaded / duration / (1024 * 1024)).toFixed(2);
+                
+                updateConnectionStatusUI();
+                setTimeout(measureConnectionSpeed, 30000);
+            };
+            
+            download.onerror = function() {
+                connectionStatus = 'unknown';
+                updateConnectionStatusUI();
+                setTimeout(measureConnectionSpeed, 30000);
+            };
+            
+            download.src = imageAddr + "?n=" + Math.random();
+        }
+        
+        function updateConnectionStatusUI() {
+            const iconElement = document.getElementById('connection-icon');
+            const messageElement = document.getElementById('connection-message');
+            const resultElement = document.getElementById('connection-result');
+            const warningElement = document.getElementById('connection-warning');
+            
+            iconElement.classList.remove("connection-status-icon");
+            
+            if (connectionSpeed === 0) {
+                iconElement.className = "ri-wifi-off-line text-red-500";
+                messageElement.innerHTML = `<span>${translations[currentLanguage].connection_poor}</span>`;
+                resultElement.classList.remove('hidden');
+                resultElement.textContent = '';
+                warningElement.classList.remove('hidden');
+                connectionStatus = 'poor';
+                return;
+            }
+            
+            const speed = parseFloat(connectionSpeed);
+            if (speed >= 3) {
+                iconElement.className = "ri-wifi-line text-green-500";
+                messageElement.innerHTML = `<span>${translations[currentLanguage].connection_excellent}</span>`;
+                resultElement.classList.remove('hidden');
+                resultElement.textContent = '';
+                warningElement.classList.add('hidden');
+                connectionStatus = 'excellent';
+            } else if (speed >= 1) {
+                iconElement.className = "ri-wifi-line text-yellow-500";
+                messageElement.innerHTML = `<span>${translations[currentLanguage].connection_good}</span>`;
+                resultElement.classList.remove('hidden');
+                resultElement.textContent = '';
+                warningElement.classList.add('hidden');
+                connectionStatus = 'good';
+            } else {
+                iconElement.className = "ri-wifi-line text-red-500";
+                messageElement.innerHTML = `<span>${translations[currentLanguage].connection_poor}</span>`;
+                resultElement.classList.remove('hidden');
+                resultElement.textContent = '';
+                warningElement.classList.remove('hidden');
+                connectionStatus = 'poor';
+            }
+        }
+
+        // Notification permission helpers
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) return;
+            const stored = localStorage.getItem('notif_permission_asked');
+            if (Notification.permission === 'granted') return;
+            if (stored === 'true') return; // already asked
+
+            // Show a friendly explanation then ask
+            if (confirm(translations[currentLanguage].notification_permission_message || 'Enable notifications?')) {
+                Notification.requestPermission().then(permission => {
+                    localStorage.setItem('notif_permission_asked', 'true');
+                    if (permission === 'granted') {
+                        showNotification(translations[currentLanguage].notifications_enabled || 'Notifications enabled');
+                    }
+                });
+            } else {
+                localStorage.setItem('notif_permission_asked', 'true');
+            }
+        }
+
+        function sendSystemNotification(title, body) {
+            try {
+                if (!('Notification' in window)) return;
+                if (Notification.permission === 'granted') {
+                    const n = new Notification(title, { body, icon: currentDriver && currentDriver.photoURL ? currentDriver.photoURL : undefined });
+                    n.onclick = function() { window.focus(); n.close(); };
+                } else {
+                    // fallback to in-app toast
+                    showNotification(body);
+                }
+            } catch (e) {
+                console.error('Notification error', e);
+            }
+        }
+        
+        function loadCommands() {
+            // Listen to multiple commande tables so the driver app recognizes admin's new workflow
+            const tables = ['commande', 'commande_unconfirmed', 'commande_transfered', 'commande_confirmed'];
+            const requestsList = document.getElementById('requests-list');
+            let newCount = 0;
+            notificationSound = document.getElementById('notification-sound');
+
+            // Maintain sets to avoid duplicates when multiple tables contain same logical order
+            // We deduplicate by a stable fingerprint of the order (orderKey) in addition to firebase key.
+            const shownKeys = new Set(); // firebase keys we've already appended
+            const shownFingerprints = new Set(); // logical fingerprints (pickup|destination|guest/user/ip|phone|time)
+
+            function normalizeString(s) {
+                if (!s && s !== 0) return '';
+                return String(s).toLowerCase().replace(/\s+/g, ' ').trim();
+            }
+
+            function normalizePhone(s) {
+                if (!s && s !== 0) return '';
+                try { return String(s).replace(/\D+/g, '').replace(/^0+/, ''); } catch(e) { return String(s || '').replace(/\D+/g, ''); }
+            }
+
+            function generateOrderFingerprint(cmd) {
+                try {
+                    // Use stable identifying fields and exclude timestamp to avoid
+                    // duplicates created when the same logical order is copied between tables.
+                    const parts = [
+                        cmd && (cmd.guestId || cmd.userId) || '',
+                        cmd && cmd.ip || '',
+                        cmd && (cmd.pickup || '') || '',
+                        cmd && (cmd.destination || '') || '',
+                        cmd && (cmd.phone || cmd.clientPhone || '') || '',
+                        cmd && (cmd.servicePlan || '') || ''
+                    ];
+                    return parts.map(normalizeString).join('|');
+                } catch (e) { return JSON.stringify(cmd || {}); }
+            }
+
+            function processSnapshot(snapshot, table) {
+                snapshot.forEach(child => {
+                    const command = child.val();
+                    const key = child.key;
+
+                    // Ignore finished trips — they should not appear in available requests
+                    if (command && command.status === 'finished') return;
+
+                    // Compute fingerprint for logical deduplication
+                    const fingerprint = generateOrderFingerprint(command || {});
+
+                    // Avoid duplicates by fingerprint (logical duplicate) or by firebase key
+                    if (shownFingerprints.has(fingerprint) || shownKeys.has(key)) return;
+
+                    const driverFullName = currentDriver ? `${currentDriver.firstname} ${currentDriver.lastname}` : null;
+
+                    // Determine if this command is relevant to the current driver
+                    const isAssignedViaChauffeur = command.chauffeur && Array.isArray(command.chauffeur) && driverFullName && command.chauffeur.includes(driverFullName);
+
+                    const myPhoneNorm = currentDriver && currentDriver.phone ? normalizePhone(currentDriver.phone) : '';
+                    const isAssignedViaAssignedDrivers = Array.isArray(command.assignedDrivers) && command.assignedDrivers.some(d => {
+                        if (!currentDriver) return false;
+                        if (d && d.id && d.id === currentDriver.id) return true;
+                        const dPhoneNorm = d && d.phone ? normalizePhone(d.phone) : '';
+                        if (dPhoneNorm && myPhoneNorm && dPhoneNorm === myPhoneNorm) return true;
+                        if (d && d.name && driverFullName && String(d.name).trim() === String(driverFullName).trim()) return true;
+                        return false;
+                    });
+
+                    const isProposedToDriver = command.proposedDrivers && ( (currentDriver && command.proposedDrivers[currentDriver.id]) || Object.values(command.proposedDrivers).some(p => currentDriver && p.phone && currentDriver.phone && p.phone.replace(/\s+/g,'') === currentDriver.phone.replace(/\s+/g,'')) );
+
+                    const isDriverIdMatch = command.driverId && currentDriver && command.driverId === currentDriver.id;
+
+                    if (isAssignedViaChauffeur || isAssignedViaAssignedDrivers || isProposedToDriver || isDriverIdMatch) {
+                        const commandElement = createCommandElement(command, key, table);
+                        // attach the logical fingerprint to the DOM so other code can reference it
+                        try { commandElement.setAttribute('data-order-key', fingerprint); commandElement.dataset.orderKey = fingerprint; } catch(e){}
+
+                        // Add or update the DOM node in a deduplicated way
+                        const added = addOrUpdateRequestElement(requestsList, commandElement, fingerprint, key, table);
+                        if (added) {
+                            shownKeys.add(key);
+                            shownFingerprints.add(fingerprint);
+                            newCount++;
+                            // schedule notifications/status changes for this order if appropriate
+                            try { scheduleDriverNotificationsForOrder(key, command); } catch(e){}
+                            // Play notification sound once per new command batch and send system notification
+                            if (notificationSound) {
+                                notificationSound.play().catch(e => console.error("Erreur son notification:", e));
+                            }
+                            const title = translations[currentLanguage].new_order || 'Nouvelle commande';
+                            const body = command.pickup && command.destination ? `${command.pickup} → ${command.destination}` : translations[currentLanguage].new_order;
+                            sendSystemNotification(title, body);
+                        }
+                        document.getElementById('no-requests-message').classList.add('hidden');
+                    }
+                });
+            }
+
+            // Rebuild the driver requests list by fetching all tables and merging entries
+            // with a stable fingerprint. This avoids duplicates when the same logical
+            // order exists in multiple tables with different firebase keys.
+            async function rebuildFromAllTables() {
+                if (__rebuildInProgress) return;
+                __rebuildInProgress = true;
+                try {
+                    shownKeys.clear();
+                    shownFingerprints.clear();
+                    requestsList.innerHTML = '';
+                    newCount = 0;
+
+                    // prefer table priority when choosing which record to display for a logical order
+                    const priority = ['commande_confirmed','commande_transfered','commande_unconfirmed','commande'];
+                    const snaps = await Promise.all(priority.map(t => database.ref(t).once('value')));
+                    const tableToSnap = {};
+                    priority.forEach((t,idx) => { tableToSnap[t] = snaps[idx]; });
+
+                    for (const t of priority) {
+                        const snap = tableToSnap[t];
+                        if (!snap || !snap.exists()) continue;
+                        snap.forEach(child => {
+                            const command = child.val();
+                            // skip finished trips when rebuilding available request list
+                            if (command && command.status === 'finished') return;
+                            const key = child.key;
+                            const fingerprint = generateOrderFingerprint(command || {});
+
+                            // Deduplicate by fingerprint and firebase key
+                            if (shownFingerprints.has(fingerprint) || shownKeys.has(key)) return;
+
+                            const driverFullName = currentDriver ? `${currentDriver.firstname} ${currentDriver.lastname}` : null;
+
+                            const isAssignedViaChauffeur = command.chauffeur && Array.isArray(command.chauffeur) && driverFullName && command.chauffeur.includes(driverFullName);
+                            const myPhoneNorm2 = currentDriver && currentDriver.phone ? normalizePhone(currentDriver.phone) : '';
+                            const isAssignedViaAssignedDrivers = Array.isArray(command.assignedDrivers) && command.assignedDrivers.some(d => {
+                                if (!currentDriver) return false;
+                                if (d && d.id && d.id === currentDriver.id) return true;
+                                const dPhoneNorm = d && d.phone ? normalizePhone(d.phone) : '';
+                                if (dPhoneNorm && myPhoneNorm2 && dPhoneNorm === myPhoneNorm2) return true;
+                                if (d && d.name && driverFullName && String(d.name).trim() === String(driverFullName).trim()) return true;
+                                return false;
+                            });
+                            const isProposedToDriver = command.proposedDrivers && ( (currentDriver && command.proposedDrivers[currentDriver.id]) || Object.values(command.proposedDrivers).some(p => currentDriver && p.phone && currentDriver.phone && p.phone.replace(/\s+/g,'') === currentDriver.phone.replace(/\s+/g,'')) );
+                            const isDriverIdMatch = command.driverId && currentDriver && command.driverId === currentDriver.id;
+
+                            if (isAssignedViaChauffeur || isAssignedViaAssignedDrivers || isProposedToDriver || isDriverIdMatch) {
+                                shownKeys.add(key);
+                                shownFingerprints.add(fingerprint);
+                                newCount++;
+                                const commandElement = createCommandElement(command, key, t);
+                                try { commandElement.setAttribute('data-order-key', fingerprint); commandElement.dataset.orderKey = fingerprint; } catch(e){}
+                                requestsList.appendChild(commandElement);
+                                // schedule notifications/status changes for this order if appropriate
+                                try { scheduleDriverNotificationsForOrder(key, command); } catch(e){}
+                                document.getElementById('no-requests-message').classList.add('hidden');
+
+                                if (notificationSound) {
+                                    notificationSound.play().catch(e => console.error("Erreur son notification:", e));
+                                }
+                                const title = translations[currentLanguage].new_order || 'Nouvelle commande';
+                                const body = command.pickup && command.destination ? `${command.pickup} → ${command.destination}` : translations[currentLanguage].new_order;
+                                sendSystemNotification(title, body);
+                            }
+                        });
+                    }
+
+                    // update counts and UI
+                    document.getElementById('new-requests-count').textContent = `${newCount} ${translations[currentLanguage].new_orders}`;
+                    if (newCount === 0) {
+                        document.getElementById('no-requests-message').classList.remove('hidden');
+                    }
+                    initRequestMaps();
+                } catch (e) {
+                    console.error('rebuildFromAllTables error', e);
+                } finally {
+                    __rebuildInProgress = false;
+                }
+            }
+
+            // Attach value listeners that trigger a full rebuild for consistency
+            tables.forEach(table => {
+                const ref = database.ref(table);
+                ref.on('value', () => { rebuildFromAllTables(); });
+            });
+        }
+
+        // DRIVER: realtime helpers — attach finer-grained listeners so individual
+        // request cards can be updated without full rebuild. Also provide polling fallback.
+        const __driverListeners = [];
+        let __driverPollTimer = null;
+    // Timers for scheduled notifications per order
+    const driverOrderTimers = new Map(); // key -> { beforeId, atId }
+
+        function updateRequestCard(key, table, data) {
+            try {
+                const el = document.querySelector(`[data-key="${key}"]`);
+                if (!el) return;
+                // update common fields
+                const priceEl = el.querySelector('.text-primary');
+                if (priceEl && typeof data.price !== 'undefined') priceEl.textContent = data.price + ' $';
+                const pickupEl = el.querySelector('span') || null;
+                // Attempt to find pickup/destination spans and update if present
+                const spans = el.querySelectorAll('.flex.items-center span');
+                if (spans && spans.length >= 2) {
+                    if (data.pickup) spans[0].textContent = data.pickup;
+                    if (data.destination) spans[1].textContent = data.destination;
+                }
+                // Update status badges if any
+                const badge = el.querySelector('.status-badge');
+                if (badge && data.status) {
+                    badge.textContent = data.status;
+                }
+                // Update displayed scheduled time (parsed from description if needed)
+                try {
+                    const timeSpan = el.querySelector('.scheduled-time');
+                    if (timeSpan) {
+                        // prefer explicit time field, otherwise parse from description
+                        let display = (data && data.time) ? data.time : null;
+                        if (!display && data && data.description) {
+                            const parsed = parseDateTimeFromDescription(data.description);
+                            if (parsed && parsed.time) display = parsed.time;
+                        }
+                        if (!display) display = (translations[currentLanguage].now || 'Maintenant');
+                        timeSpan.textContent = display;
+                    }
+                } catch(e) {}
+                // Re-schedule notifications/timers if scheduling fields changed
+                try { scheduleDriverNotificationsForOrder(key, data); } catch(e){}
+            } catch(e) { console.error('updateRequestCard error', e); }
+        }
+
+        function removeRequestCard(key) {
+            try { const el = document.querySelector(`[data-key="${key}"]`); if (el) el.remove(); } catch(e){}
+            try {
+                // Also remove any nodes that have a fingerprint matching a removed key
+                // (in case the same logical order exists under a different firebase key)
+                const nodes = Array.from(document.querySelectorAll('[data-order-key]'));
+                for (const n of nodes) {
+                    try {
+                        if (!n.dataset || !n.dataset.orderKey) continue;
+                        // If the node's data-key is absent in current tables, remove it
+                        const fk = n.dataset.key;
+                        if (fk && !document.querySelector(`[data-key="${fk}"]`)) {
+                            n.remove();
+                        }
+                    } catch(e){}
+                }
+            } catch(e){}
+            // clear any scheduled timers for this order
+            try { clearScheduledTimersForOrder(key); } catch(e){}
+        }
+
+        // Add a command element to the list or update the existing one if fingerprint matches.
+        // Returns true if a new element was appended (meaning the caller should count it as new).
+        function addOrUpdateRequestElement(listEl, commandElement, fingerprint, firebaseKey, table) {
+            try {
+                // Manual scan to avoid selector issues when fingerprint contains special chars
+                let foundByFingerprint = null;
+                let foundByKey = null;
+                const children = Array.from(listEl.children || []);
+                for (const child of children) {
+                    try {
+                        if (child.dataset && typeof child.dataset.orderKey !== 'undefined' && child.dataset.orderKey === fingerprint) {
+                            if (!foundByFingerprint) foundByFingerprint = child;
+                            else {
+                                // If multiple exist, remove extras
+                                child.remove();
+                                continue;
+                            }
+                        }
+                        if (child.dataset && typeof child.dataset.key !== 'undefined' && child.dataset.key === firebaseKey) {
+                            foundByKey = child;
+                        }
+                    } catch(e) { /* ignore per-node errors */ }
+                }
+
+                if (foundByFingerprint) {
+                    // update in-place
+                    foundByFingerprint.setAttribute('data-key', firebaseKey);
+                    foundByFingerprint.setAttribute('data-table', table);
+                    foundByFingerprint.dataset.orderKey = fingerprint;
+                    foundByFingerprint.dataset.key = firebaseKey;
+                    foundByFingerprint.dataset.table = table;
+                    foundByFingerprint.innerHTML = commandElement.innerHTML;
+                    return false;
+                }
+
+                if (foundByKey) {
+                    foundByKey.setAttribute('data-order-key', fingerprint);
+                    foundByKey.setAttribute('data-table', table);
+                    foundByKey.dataset.orderKey = fingerprint;
+                    foundByKey.dataset.table = table;
+                    foundByKey.innerHTML = commandElement.innerHTML;
+                    return false;
+                }
+
+                // Otherwise append as new
+                listEl.appendChild(commandElement);
+                return true;
+            } catch(e) { console.error('addOrUpdateRequestElement error', e); return false; }
+        }
+
+        // Simple lock to avoid overlapping rebuilds which could append duplicates
+        let __rebuildInProgress = false;
+
+        function clearScheduledTimersForOrder(key) {
+            try {
+                const t = driverOrderTimers.get(key);
+                if (t) {
+                    if (t.beforeId) clearTimeout(t.beforeId);
+                    if (t.atId) clearTimeout(t.atId);
+                }
+                driverOrderTimers.delete(key);
+            } catch(e) { console.error('clearScheduledTimersForOrder error', e); }
+        }
+
+        function parseScheduledTimestamp(command) {
+            try {
+                if (!command) return null;
+                if (typeof command.scheduledAt === 'number') return Number(command.scheduledAt);
+                // If there's a date and time fields (common for plan orders)
+                if (command.date && command.time) {
+                    const dt = new Date(`${command.date} ${command.time}`);
+                    if (!isNaN(dt.getTime())) return dt.getTime();
+                }
+                // If there's only a time string, assume today at that time
+                if (command.time && !isNaN(Date.parse(command.time))) {
+                    const dt = new Date(command.time);
+                    if (!isNaN(dt.getTime())) return dt.getTime();
+                }
+                // Fallback: if time is present but not parseable, try combining timestamp date with time
+                if (command.time && command.timestamp) {
+                    const base = new Date(Number(command.timestamp));
+                    const [h,m] = String(command.time).split(':').map(x => parseInt(x,10));
+                    if (!isNaN(h)) {
+                        base.setHours(h, !isNaN(m)?m:0,0,0);
+                        return base.getTime();
+                    }
+                }
+                // Fallback: try parsing date/time from freeform description
+                try {
+                    if (command.description) {
+                        const parsed = parseDateTimeFromDescription(command.description);
+                        if (parsed) {
+                            if (parsed.scheduledAt) return parsed.scheduledAt;
+                            if (parsed.date && parsed.time) {
+                                const dt = new Date(parsed.date + ' ' + parsed.time);
+                                if (!isNaN(dt.getTime())) return dt.getTime();
+                            }
+                            if (parsed.time) {
+                                const now = new Date();
+                                const parts = parsed.time.split(':').map(x => parseInt(x,10));
+                                const h = parts[0], m = parts[1] || 0;
+                                const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
+                                if (!isNaN(dt.getTime())) return dt.getTime();
+                            }
+                        }
+                    }
+                } catch(e) {}
+                return null;
+            } catch(e) { return null; }
+        }
+
+        function scheduleDriverNotificationsForOrder(key, command) {
+            try {
+                // ensure we clear previous timers
+                clearScheduledTimersForOrder(key);
+                const scheduledAt = parseScheduledTimestamp(command) || null;
+                const now = Date.now();
+
+                const setDriverBusy = () => {
+                    try {
+                        if (currentDriver && currentDriver.id) {
+                            const driverRef = database.ref(`drivers/${currentDriver.id}`);
+                            driverRef.update({ status: 'busy' });
+                            driverStatus = 'busy';
+                            updateStatusUI();
+                        }
+                    } catch(e) {}
+                };
+
+                if (!scheduledAt) {
+                    // No scheduled time: immediate pickup -> set busy now and notify
+                    sendSystemNotification('Prise en charge', 'Heure de la course: maintenant — statut mis à jour.');
+                    setDriverBusy();
+                    return;
+                }
+
+                const msUntil = scheduledAt - now;
+                const thirtyMin = 30 * 60 * 1000;
+
+                if (msUntil <= 0) {
+                    // time already arrived or past: set busy now and notify arrival
+                    sendSystemNotification('Heure de la course', "L'heure de la commande est arrivée.");
+                    setDriverBusy();
+                    return;
+                }
+
+                // Schedule 30-minute warning
+                const beforeDelay = Math.max(0, msUntil - thirtyMin);
+                const beforeId = setTimeout(() => {
+                    try {
+                        sendSystemNotification('Rappel: 30 minutes', "Il reste 30 minutes avant la course. Préparez-vous.");
+                    } catch(e){}
+                }, beforeDelay);
+
+                // Schedule at-time notification to set driver busy
+                const atId = setTimeout(() => {
+                    try {
+                        sendSystemNotification('Heure de la course', "L'heure de la commande est arrivée.");
+                        setDriverBusy();
+                    } catch(e){}
+                }, msUntil);
+
+                driverOrderTimers.set(key, { beforeId, atId });
+            } catch(e) { console.error('scheduleDriverNotificationsForOrder error', e); }
+        }
+
+        function subscribeDriverRealtime({debounceMs = 250} = {}) {
+            // attach child_changed and child_removed to each orders table
+            const tables = ['commande','commande_unconfirmed','commande_transfered','commande_confirmed'];
+            const triggerGlobalRebuild = debounce(() => { try { loadCommands(); } catch(e){} }, debounceMs);
+
+            // For each table attach child_added, child_changed, child_removed so
+            // UI updates immediately when a record is created/updated/moved.
+            tables.forEach(table => {
+                const ref = database.ref(table);
+
+                const onAdded = snapshot => {
+                    try {
+                        const key = snapshot.key;
+                        const data = snapshot.val();
+                        // Create element if the record is relevant to this driver
+                        const fingerprint = generateOrderFingerprint(data || {});
+                        // Remove any other DOM node with same fingerprint but different key
+                        try {
+                            const existing = Array.from(document.querySelectorAll('[data-order-key]')).find(n => n.dataset.orderKey === fingerprint && n.dataset.key !== key);
+                            if (existing) existing.remove();
+                        } catch(e){}
+
+                        // If relevant, add it (addOrUpdateRequestElement will dedupe)
+                        try { processSnapshot({ forEach: cb => cb(snapshot) }, table); } catch(e){}
+                    } catch(e) { console.error('onAdded handler error', e); }
+                };
+
+                const onChanged = snapshot => { try { const key = snapshot.key; const data = snapshot.val(); updateRequestCard(key, table, data); } catch(e){} };
+
+                const onRemoved = snapshot => { try { const key = snapshot.key; removeRequestCard(key); } catch(e){} };
+
+                ref.on('child_added', onAdded);
+                ref.on('child_changed', onChanged);
+                ref.on('child_removed', onRemoved);
+
+                __driverListeners.push({ ref, event: 'child_added', handler: onAdded });
+                __driverListeners.push({ ref, event: 'child_changed', handler: onChanged });
+                __driverListeners.push({ ref, event: 'child_removed', handler: onRemoved });
+            });
+
+            // Fallback: also listen to value events to rebuild in some edge-cases
+            tables.forEach(table => {
+                const ref = database.ref(table);
+                const onValue = () => triggerGlobalRebuild();
+                ref.on('value', onValue);
+                __driverListeners.push({ ref, event: 'value', handler: onValue });
+            });
+        }
+
+        function unsubscribeDriverRealtime() {
+            try {
+                __driverListeners.forEach(l => { try { l.ref.off(l.event, l.handler); } catch(e){} });
+            } finally { __driverListeners.length = 0; }
+            if (__driverPollTimer) { clearInterval(__driverPollTimer); __driverPollTimer = null; }
+        }
+
+        // Parse date/time from a description string like "Date: 2025-10-20, Heure: 19:40"
+        // Returns { date, time, scheduledAt } or null
+        function parseDateTimeFromDescription(desc) {
+            try {
+                if (!desc || typeof desc !== 'string') return null;
+                const s = desc.replace(/\s+/g, ' ').trim();
+                // Try ISO date first
+                const iso = s.match(/date\s*[:\-]?\s*(\d{4}-\d{2}-\d{2})/i);
+                let date = iso ? iso[1] : null;
+                if (!date) {
+                    const dmy = s.match(/date\s*[:\-]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i);
+                    if (dmy && dmy[1]) {
+                        const parts = dmy[1].split(/[\/\.\-]/).map(x => parseInt(x,10));
+                        if (parts.length === 3) {
+                            let day = parts[0], month = parts[1], year = parts[2];
+                            if (year < 100) year += 2000;
+                            date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                        }
+                    }
+                }
+
+                const timeMatch = s.match(/heure\s*[:\-]?\s*(\d{1,2}:\d{2})/i) || s.match(/(\d{1,2}:\d{2})/);
+                const time = timeMatch && timeMatch[1] ? timeMatch[1] : null;
+
+                let scheduledAt = null;
+                if (date && time) {
+                    const dt = new Date(`${date} ${time}`);
+                    if (!isNaN(dt.getTime())) scheduledAt = dt.getTime();
+                } else if (time) {
+                    const parts = time.split(':').map(x => parseInt(x,10));
+                    const h = parts[0], m = parts[1] || 0;
+                    const now = new Date();
+                    const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
+                    if (!isNaN(dt.getTime())) scheduledAt = dt.getTime();
+                }
+
+                return { date, time, scheduledAt };
+            } catch(e) { return null; }
+        }
+
+        function startDriverPolling({intervalMs = 1000}) {
+            // Poll tables and update individual cards when snapshot differs
+            if (__driverPollTimer) clearInterval(__driverPollTimer);
+            const tables = ['commande','commande_unconfirmed','commande_transfered','commande_confirmed'];
+            let last = {};
+            __driverPollTimer = setInterval(async () => {
+                try {
+                    for (const table of tables) {
+                        const snap = await database.ref(table).once('value');
+                        const val = snap.exists() ? snap.val() : null;
+                        const key = table;
+                        const s = JSON.stringify(val);
+                        if (last[key] !== s) {
+                            last[key] = s;
+                            // update each child locally
+                            if (val) {
+                                Object.keys(val).forEach(k => updateRequestCard(k, table, val[k]));
+                            }
+                        }
+                    }
+                } catch(e) { console.error('driver polling error', e); }
+            }, intervalMs);
+        }
+        
+        function createCommandElement(command, key, table = 'commande_transfered') {
+            const element = document.createElement('div');
+            element.className = 'request-card request-item';
+            element.dataset.key = key;
+            element.dataset.table = table;
+            
+            let mapHTML = '';
+            
+            if (command.latitude && command.longitude && driverLocation) {
+                mapHTML = `
+                    <div class="mt-4">
+                        <div id="map-${key}" class="request-map-container">
+                            <div id="request-map-${key}" class="request-map"></div>
+                        </div>
+                        <div class="mt-2 text-sm">
+                            <span id="distance-${key}">${translations[currentLanguage].calculating}...</span> | 
+                            <span id="duration-${key}">${translations[currentLanguage].calculating}...</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Déterminer l'affichage du type de trajet
+            let tripTypeDisplay = translations[currentLanguage].one_way;
+            if (command.tripType === 'aller-retour') {
+                tripTypeDisplay = translations[currentLanguage].round_trip;
+            }
+            
+            // Build actions HTML separately (use concatenation to avoid template parsing issues)
+            var actionsHTML = '';
+            try {
+                var isProposed = command.proposedDrivers && currentDriver && (command.proposedDrivers[currentDriver.id] || Object.values(command.proposedDrivers).some(function(p){ return p.phone && currentDriver.phone && p.phone.replace(/\s+/g,'') === currentDriver.phone.replace(/\s+/g,''); }));
+                var alreadyAccepted = isProposed && currentDriver && command.proposedDrivers && command.proposedDrivers[currentDriver.id] && command.proposedDrivers[currentDriver.id].accepted;
+                if (isProposed && !alreadyAccepted) {
+                    actionsHTML = '' +
+                        '<button class="w-full bg-gray-200 text-gray-800 py-3 !rounded-button font-medium cursor-pointer cancel-order-btn" data-key="' + key + '" data-table="' + table + '">' +
+                            translations[currentLanguage].cancel +
+                        '</button>' +
+                        '<button class="w-full bg-blue-500 text-white py-3 !rounded-button font-medium cursor-pointer accept-proposal-btn" data-key="' + key + '" data-table="' + table + '">' +
+                            (translations[currentLanguage].accept_proposal || 'Accepter la proposition') +
+                        '</button>';
+                } else {
+                    // Standard actions: cancel + accept
+                    actionsHTML = '' +
+                        '<button class="w-full bg-gray-200 text-gray-800 py-3 !rounded-button font-medium cursor-pointer cancel-order-btn" data-key="' + key + '" data-table="' + table + '">' +
+                            translations[currentLanguage].cancel +
+                        '</button>' +
+                        '<button class="w-full bg-green-500 text-white py-3 !rounded-button font-medium cursor-pointer accept-order-btn" data-key="' + key + '" data-table="' + table + '">' +
+                            translations[currentLanguage].accept +
+                        '</button>';
+                }
+
+                // If command is already accepted by this driver (exists in commande_confirmed)
+                // provide status controls for the driver to update the trip lifecycle.
+                try {
+                    const isAccepted = command && (command.driverId === (currentDriver && currentDriver.id));
+                    if (isAccepted) {
+                        // Replace actionsHTML with lifecycle buttons
+                        actionsHTML = '' +
+                            '<button class="w-full bg-blue-500 text-white py-3 !rounded-button font-medium cursor-pointer mark-onway-btn" data-key="' + key + '">Je suis en route</button>' +
+                            '<button class="w-full bg-orange-500 text-white py-3 !rounded-button font-medium cursor-pointer mark-here-btn" data-key="' + key + '">Je suis arrivé</button>' +
+                            '<button class="w-full bg-green-600 text-white py-3 !rounded-button font-medium cursor-pointer mark-finished-btn" data-key="' + key + '">Trajet terminé</button>';
+                    }
+                } catch(e) {}
+            } catch (e) {
+                actionsHTML = '' +
+                    '<button class="w-full bg-gray-200 text-gray-800 py-3 !rounded-button font-medium cursor-pointer cancel-order-btn" data-key="' + key + '" data-table="' + table + '">' +
+                        translations[currentLanguage].cancel +
+                    '</button>' +
+                    '<button class="w-full bg-green-500 text-white py-3 !rounded-button font-medium cursor-pointer accept-order-btn" data-key="' + key + '" data-table="' + table + '">' +
+                        translations[currentLanguage].accept +
+                    '</button>';
+            }
+
+            var html = '';
+            html += '<div class="flex items-start justify-between mb-3">';
+            html += '<div class="flex items-center">';
+            html += '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-10 h-10 flex items-center justify-center">';
+            html += '<i class="ri-user-line text-gray-400"></i>';
+            html += '</div>';
+            html += '<div class="ml-3">';
+            html += '<h4 class="font-medium text-gray-800">' + (command.clientName || translations[currentLanguage].client) + '</h4>';
+            html += '<p class="text-xs text-gray-500">' + formatTimeAgo(command.timestamp) + '</p>';
+            html += '</div></div>';
+            html += (command.urgent ? '<span class="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded">' + translations[currentLanguage].urgent + '</span>' : '');
+            html += '</div>';
+            // Details: pickup, destination, time, trip type
+            html += '<div class="mb-3">';
+            html += '<div class="flex items-center text-sm text-gray-600 mb-2">';
+            html += '<div class="w-4 h-4 flex items-center justify-center"><i class="ri-record-circle-fill text-green-500 text-xs"></i></div>';
+            html += '<span class="ml-2">' + (command && command.pickup ? command.pickup : '') + '</span>';
+            html += '</div>';
+            html += '<div class="flex items-center text-sm text-gray-600 mb-2">';
+            html += '<div class="w-4 h-4 flex items-center justify-center"><i class="ri-map-pin-fill text-primary text-xs"></i></div>';
+            html += '<span class="ml-2">' + (command && command.destination ? command.destination : (translations[currentLanguage].unknown_destination || 'Destination inconnue')) + '</span>';
+            html += '</div>';
+            // Determine displayed pickup time: explicit time preferred, else parse from description
+            var displayTime = (command && command.time) ? command.time : null;
+            try {
+                if (!displayTime && command && command.description) {
+                    var parsed = parseDateTimeFromDescription(command.description);
+                    if (parsed && parsed.time) displayTime = parsed.time;
+                }
+            } catch(e) {}
+            if (!displayTime) displayTime = (translations[currentLanguage].now || 'Maintenant');
+
+            html += '<div class="flex items-center text-sm text-gray-600 mb-2">';
+            html += '<div class="w-4 h-4 flex items-center justify-center"><i class="ri-time-line text-gray-400 text-xs"></i></div>';
+            html += '<span class="ml-2 scheduled-time">' + displayTime + '</span>';
+            html += '</div>';
+            html += '<div class="flex items-center text-sm text-gray-600 mb-2">';
+            html += '<div class="w-4 h-4 flex items-center justify-center"><i class="ri-route-line text-blue-500 text-xs"></i></div>';
+            html += '<span class="ml-2">' + tripTypeDisplay + '</span>';
+            html += '</div>';
+            html += '</div>';
+
+            if (command && command.notes) {
+                html += '<div class="bg-gray-50 rounded p-3 mb-4"><p class="text-sm text-gray-600">"' + command.notes + '"</p></div>';
+            }
+
+            html += '<div class="mt-2"><p class="font-medium">' + (translations[currentLanguage].price || 'Prix') + ': <span class="text-primary">' + (command && typeof command.price !== 'undefined' ? (command.price + ' $') : '—') + '</span></p></div>';
+
+            html += mapHTML || '';
+            html += '<div class="grid grid-cols-2 gap-2 mt-4">' + actionsHTML + '</div>';
+            element.innerHTML = html;
+            
+            return element;
+        }
+
+        // Driver accepts a proposal (admin-proposed driver). This will mark proposedDrivers/<driverId>/accepted = true
+        function acceptProposal(key, table) {
+            if (!currentDriver || !currentDriver.id) return showNotification(translations[currentLanguage].login_required || 'Veuillez vous connecter', 'error');
+            const commandRef = database.ref(`${table}/${key}/proposedDrivers/${currentDriver.id}`);
+            commandRef.once('value').then(snap => {
+                const val = snap.val() || {};
+                const update = Object.assign({}, val, { accepted: true, acceptedAt: Date.now(), id: currentDriver.id, name: `${currentDriver.firstname} ${currentDriver.lastname}`, phone: currentDriver.phone });
+                return commandRef.set(update);
+            }).then(() => {
+                // mark driver busy locally and update DB
+                if (currentDriver && currentDriver.id) {
+                    database.ref(`drivers/${currentDriver.id}`).update({ status: 'busy' });
+                    driverStatus = 'busy';
+                    updateStatusUI();
+                    document.getElementById('requests-section').classList.add('hidden');
+                }
+                showNotification(translations[currentLanguage].proposal_accepted || 'Proposition acceptée');
+            }).catch(err => {
+                console.error('Erreur acceptProposal:', err);
+                showNotification(translations[currentLanguage].error || 'Erreur', 'error');
+            });
+        }
+        
+        function initRequestMaps() {
+            document.querySelectorAll('.request-item').forEach(item => {
+                const key = item.dataset.key;
+                const mapElement = document.getElementById(`request-map-${key}`);
+                
+                if (!mapElement) return;
+                
+                    // Prefer the table declared on the element (set in createCommandElement)
+                    const parent = document.querySelector(`.request-item[data-key="${key}"]`);
+                    const declaredTable = parent && parent.dataset && parent.dataset.table ? parent.dataset.table : null;
+
+                    const tryTables = declaredTable ? [declaredTable] : ['commande_transfered','commande_unconfirmed','commande','commande_confirmed'];
+
+                    // Helper to try tables in order until a command with lat/lng is found
+                    (function tryNext(i){
+                        if (i >= tryTables.length) return;
+                        const t = tryTables[i];
+                        const commandRef = database.ref(`${t}/${key}`);
+                        commandRef.once('value', snapshot => {
+                            const command = snapshot.val();
+                            if (!command || !command.latitude || !command.longitude || !driverLocation) {
+                                // try next table
+                                tryNext(i+1);
+                                return;
+                            }
+
+                            const clientLocation = {
+                                lat: parseFloat(command.latitude),
+                                lng: parseFloat(command.longitude)
+                            };
+                    
+                    const requestMap = L.map(`request-map-${key}`).setView([
+                        (driverLocation.lat + clientLocation.lat) / 2,
+                        (driverLocation.lng + clientLocation.lng) / 2
+                    ], 14);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    }).addTo(requestMap);
+                    
+                    L.marker([driverLocation.lat, driverLocation.lng], {
+                        icon: L.divIcon({
+                            html: '<div class="map-marker-icon driver"><i class="ri-car-line"></i></div>',
+                            className: 'dummy',
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 16]
+                        })
+                    }).addTo(requestMap);
+                    
+                    L.marker([clientLocation.lat, clientLocation.lng], {
+                        icon: L.divIcon({
+                            html: '<div class="map-marker-icon client"><i class="ri-user-location-fill"></i></div>',
+                            className: 'dummy',
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 16]
+                        })
+                    }).addTo(requestMap);
+                    
+                    calculateDistanceAndTime(driverLocation, clientLocation, key);
+                });
+            })(0);
+        });
+
+        // Clean up listeners on unload so reload re-attaches cleanly
+        window.addEventListener('beforeunload', function() {
+            try { unsubscribeDriverRealtime(); } catch(e){}
+            try { if (__driverStatsRef) { __driverStatsRef.off('value'); __driverStatsRef = null; } } catch(e){}
+        });
+        }
+        
+        function calculateDistanceAndTime(start, end, key) {
+            const distanceElement = document.getElementById(`distance-${key}`);
+            const durationElement = document.getElementById(`duration-${key}`);
+            
+            const R = 6371;
+            const dLat = deg2rad(end.lat - start.lat);
+            const dLon = deg2rad(end.lng - start.lng);
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(start.lat)) * Math.cos(deg2rad(end.lat)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            const distance = R * c;
+            
+            const timeMinutes = Math.round((distance / 40) * 60);
+            
+            distanceElement.textContent = `${distance.toFixed(1)} km`;
+            durationElement.textContent = `${timeMinutes} ${translations[currentLanguage].minutes}`;
+        }
+        
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+        
+        function formatTimeAgo(timestamp) {
+            if (!timestamp) return translations[currentLanguage].just_now;
+            
+            const now = Date.now();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            
+            if (minutes < 1) return translations[currentLanguage].just_now;
+            if (minutes === 1) return translations[currentLanguage].one_minute_ago;
+            return `${translations[currentLanguage].minutes_ago.replace('{n}', minutes)}`;
+        }
+        
+        function setupOrderHandling() {
+            document.addEventListener('click', function(e) {
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                if (target.classList.contains('cancel-order-btn')) {
+                    const key = target.dataset.key;
+                    const table = target.dataset.table || 'commande_transfered';
+                    cancelOrderWithTable(key, table);
+                } else if (target.classList.contains('accept-proposal-btn')) {
+                    const key = target.dataset.key;
+                    const table = target.dataset.table || 'commande_transfered';
+                    acceptProposal(key, table);
+                } else if (target.classList.contains('accept-order-btn')) {
+                    const key = target.dataset.key;
+                    const table = target.dataset.table || 'commande_transfered';
+                    acceptOrderWithTable(key, table);
+                } else if (target.classList.contains('mark-onway-btn')) {
+                    const key = target.dataset.key;
+                    // mark status in commande_confirmed
+                    try { database.ref(`commande_confirmed/${key}`).update({ status: 'onway', onwayAt: Date.now() }); updateRequestCard(key, 'commande_confirmed', { status: 'onway' }); } catch(e){}
+                } else if (target.classList.contains('mark-here-btn')) {
+                    const key = target.dataset.key;
+                    try {
+                        // include driver contact info so the client can reach the driver
+                        const payload = { status: 'here', arrivedAt: Date.now() };
+                        if (currentDriver) {
+                            payload.driverName = `${currentDriver.firstname || ''} ${currentDriver.lastname || ''}`.trim();
+                            payload.driverPhone = currentDriver.phone || currentDriver.mobile || '';
+                            payload.driverPhoto = currentDriver.photoURL || '';
+                        }
+                        database.ref(`commande_confirmed/${key}`).update(payload);
+                        updateRequestCard(key, 'commande_confirmed', { status: 'here', driverName: payload.driverName, driverPhone: payload.driverPhone });
+                    } catch(e){}
+                } else if (target.classList.contains('mark-finished-btn')) {
+                    const key = target.dataset.key;
+                    try { database.ref(`commande_confirmed/${key}`).update({ status: 'finished', finishedAt: Date.now() }); updateRequestCard(key, 'commande_confirmed', { status: 'finished' }); } catch(e){}
+                }
+            });
+        }
+
+        // Wrapper to accept order coming from any table path (keeps original behavior but uses provided table)
+        function acceptOrderWithTable(key, table) {
+            const commandRef = database.ref(`${table}/${key}`);
+            commandRef.once('value', snapshot => {
+                const command = snapshot.val();
+
+                // Mettre à jour la commande avec le chauffeur qui accepte
+                // Preserve the original firebase key by writing to commande_confirmed/<key>
+                const confirmedRef = database.ref(`commande_confirmed/${key}`);
+                const acceptedCommand = Object.assign({}, command || {}, {
+                    driverId: currentDriver && currentDriver.id || null,
+                    driverName: currentDriver ? `${currentDriver.firstname} ${currentDriver.lastname}` : '',
+                    driverPhoto: currentDriver ? currentDriver.photoURL : '',
+                    status: 'pending'
+                });
+
+                confirmedRef.set(acceptedCommand)
+                    .then(() => {
+                        // Supprimer la commande de sa table d'origine
+                        commandRef.remove()
+                            .then(() => {
+                                try {
+                                    // Decide whether to set driver busy now or schedule for later
+                                    const scheduledAt = parseScheduledTimestamp(acceptedCommand);
+                                    const now = Date.now();
+
+                                    if (scheduledAt && scheduledAt > now) {
+                                        // Scheduled for the future: do not mark driver busy now.
+                                        // Hide requests UI but keep driver status available until scheduled time.
+                                        try { scheduleDriverNotificationsForOrder(key, acceptedCommand); } catch(e){}
+                                        document.getElementById('requests-section').classList.add('hidden');
+                                    } else {
+                                        // Immediate or past scheduled time: mark busy now.
+                                        if (currentDriver && currentDriver.id) {
+                                            const driverRef = database.ref(`drivers/${currentDriver.id}`);
+                                            driverRef.update({ status: 'busy' });
+                                            driverStatus = 'busy';
+                                            updateStatusUI();
+
+                                            document.getElementById('requests-section').classList.add('hidden');
+                                        }
+                                    }
+                                } catch(e) { console.error('acceptOrderWithTable scheduling error', e); }
+
+                                showNotification(translations[currentLanguage].order_accepted);
+                            });
+                    })
+                    .catch(error => {
+                        console.error("Erreur lors de l'acceptation:", error);
+                        showNotification(translations[currentLanguage].acceptance_error);
+                    });
+            });
+        }
+
+        function cancelOrderWithTable(key, table) {
+            const commandRef = database.ref(`${table}/${key}`);
+            commandRef.once('value', snapshot => {
+                const command = snapshot.val();
+
+                // Retirer le chauffeur de la liste des chauffeurs assignés
+                if (command.chauffeur && Array.isArray(command.chauffeur)) {
+                    const updatedDrivers = command.chauffeur.filter(driver => 
+                        driver !== `${currentDriver.firstname} ${currentDriver.lastname}`
+                    );
+
+                    commandRef.update({ chauffeur: updatedDrivers })
+                        .then(() => {
+                            showNotification(translations[currentLanguage].order_cancelled);
+                        })
+                        .catch(error => {
+                            console.error("Erreur lors de l'annulation:", error);
+                            showNotification(translations[currentLanguage].cancellation_error);
+                        });
+                }
+            });
+        }
+        
+        function cancelOrder(key) {
+            const commandRef = database.ref(`commande_transfered/${key}`);
+            commandRef.once('value', snapshot => {
+                const command = snapshot.val();
+                
+                // Retirer le chauffeur de la liste des chauffeurs assignés
+                if (command.chauffeur && Array.isArray(command.chauffeur)) {
+                    const updatedDrivers = command.chauffeur.filter(driver => 
+                        driver !== `${currentDriver.firstname} ${currentDriver.lastname}`
+                    );
+                    
+                    commandRef.update({ chauffeur: updatedDrivers })
+                        .then(() => {
+                            showNotification(translations[currentLanguage].order_cancelled);
+                        })
+                        .catch(error => {
+                            console.error("Erreur lors de l'annulation:", error);
+                            showNotification(translations[currentLanguage].cancellation_error);
+                        });
+                }
+            });
+        }
+        
+        function acceptOrder(key) {
+            const commandRef = database.ref(`commande_transfered/${key}`);
+            commandRef.once('value', snapshot => {
+                const command = snapshot.val();
+                
+                // Mettre à jour la commande avec le chauffeur qui accepte
+                // Preserve the original firebase key by writing to commande_confirmed/<key>
+                const confirmedRef = database.ref(`commande_confirmed/${key}`);
+                const acceptedCommand = Object.assign({}, command || {}, {
+                    driverId: currentDriver && currentDriver.id || null,
+                    driverName: currentDriver ? `${currentDriver.firstname} ${currentDriver.lastname}` : '',
+                    driverPhoto: currentDriver ? currentDriver.photoURL : '',
+                    status: 'pending'
+                });
+
+                confirmedRef.set(acceptedCommand)
+                    .then(() => {
+                        // Supprimer la commande de commande_transfered
+                        commandRef.remove()
+                            .then(() => {
+                                try {
+                                    const scheduledAt = parseScheduledTimestamp(acceptedCommand);
+                                    const now = Date.now();
+
+                                    if (scheduledAt && scheduledAt > now) {
+                                        // Scheduled for the future: schedule notifications and keep driver available until then
+                                        try { scheduleDriverNotificationsForOrder(key, acceptedCommand); } catch(e){}
+                                        document.getElementById('requests-section').classList.add('hidden');
+                                    } else {
+                                        // Immediate or past scheduled time: mark busy now.
+                                        if (currentDriver && currentDriver.id) {
+                                            const driverRef = database.ref(`drivers/${currentDriver.id}`);
+                                            driverRef.update({ status: 'busy' });
+                                            driverStatus = 'busy';
+                                            updateStatusUI();
+                                            
+                                            document.getElementById('requests-section').classList.add('hidden');
+                                        }
+                                    }
+                                } catch(e) { console.error('acceptOrder scheduling error', e); }
+
+                                showNotification(translations[currentLanguage].order_accepted);
+                            });
+                    })
+                    .catch(error => {
+                        console.error("Erreur lors de l'acceptation:", error);
+                        showNotification(translations[currentLanguage].acceptance_error);
+                    });
+            });
+        }
+        
+        function setupStatusToggle() {
+            document.getElementById('status-toggle').addEventListener('click', function() {
+                if (driverStatus === 'available') {
+                    driverStatus = 'busy';
+                } else {
+                    driverStatus = 'available';
+                }
+                
+                if (currentDriver && currentDriver.id) {
+                    const driverRef = database.ref(`drivers/${currentDriver.id}`);
+                    driverRef.update({ status: driverStatus });
+                }
+                
+                updateStatusUI();
+                
+                if (driverStatus === 'available') {
+                    document.getElementById('requests-section').classList.remove('hidden');
+                } else {
+                    document.getElementById('requests-section').classList.add('hidden');
+                }
+            });
+        }
+        
+        function initMap() {
+            const defaultPosition = [19.639994, -72.044276];
+            
+            map = L.map('map').setView(defaultPosition, 14);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+            
+            const btn = document.getElementById("toggleMapBtn");
+            const container = document.getElementById("map-container");
+            btn.onclick = () => {
+                container.classList.toggle("fullscreen");
+                const icon = btn.querySelector('i');
+                if (container.classList.contains("fullscreen")) {
+                    icon.className = "ri-fullscreen-exit-line text-lg";
+                } else {
+                    icon.className = "ri-fullscreen-line text-lg";
+                }
+                setTimeout(() => map.invalidateSize(), 300);
+            };
+        }
+        
+        function updateMapRoute(start, end) {
+            if (!start || !end) return;
+            
+            if (routeControl) {
+                map.removeControl(routeControl);
+            }
+            
+            routeControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(start.lat, start.lng),
+                    L.latLng(end.lat, end.lng)
+                ],
+                lineOptions: {
+                    styles: [{ color: '#16a34a', weight: 5 }]
+                },
+                routeWhileDragging: false,
+                addWaypoints: false,
+                draggableWaypoints: false,
+                createMarker: function() { return null; }
+            }).addTo(map);
+            
+            if (driverMarker) {
+                driverMarker.setLatLng([start.lat, start.lng]);
+            } else {
+                driverMarker = L.marker([start.lat, start.lng], {
+                    icon: L.divIcon({
+                        html: '<div class="map-marker-icon driver"><i class="ri-car-line"></i></div>',
+                        className: 'dummy',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    })
+                }).addTo(map);
+            }
+            
+            if (clientMarker) {
+                clientMarker.setLatLng([end.lat, end.lng]);
+            } else {
+                clientMarker = L.marker([end.lat, end.lng], {
+                    icon: L.divIcon({
+                        html: '<div class="map-marker-icon client"><i class="ri-user-location-fill"></i></div>',
+                        className: 'dummy',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    })
+                }).addTo(map);
+            }
+            
+            if (!map.getBounds().contains(L.latLng(end.lat, end.lng))) {
+                const bounds = L.latLngBounds([start.lat, start.lng], [end.lat, end.lng]);
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+        
+        function loadActiveTrip() {
+            const confirmedRef = database.ref('commande_confirmed');
+            const activeTripSection = document.getElementById('active-trip-section');
+            
+            confirmedRef.orderByChild('driverId').equalTo(currentDriver.id).on('value', snapshot => {
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        const trip = child.val();
+                        if (trip.status === 'pending' || trip.status === 'here') {
+                            currentTrip = {
+                                key: child.key,
+                                ...trip
+                            };
+                            
+                            activeTripSection.classList.remove('hidden');
+                            
+                            document.getElementById('pickup-address').textContent = trip.pickup || translations[currentLanguage].current_position;
+                            document.getElementById('destination-address').textContent = trip.destination || translations[currentLanguage].unknown_destination;
+                            
+                            // Afficher le type de trajet
+                            let tripTypeDisplay = translations[currentLanguage].one_way;
+                            if (trip.tripType === 'aller-retour') {
+                                tripTypeDisplay = translations[currentLanguage].round_trip;
+                            }
+                            document.getElementById('trip-type').textContent = tripTypeDisplay;
+                            
+                            document.getElementById('client-name').textContent = trip.clientName || translations[currentLanguage].client;
+                            document.getElementById('client-notes').textContent = trip.notes || translations[currentLanguage].no_notes;
+                            
+                            const statusBadge = document.getElementById('trip-status-badge');
+                            
+                            if (trip.status === 'pending') {
+                                statusBadge.className = 'status-badge status-pending';
+                                statusBadge.textContent = translations[currentLanguage].on_way;
+                                document.getElementById('arrived-btn').classList.remove('hidden');
+                                document.getElementById('finish-trip-btn').classList.add('hidden');
+                            } else if (trip.status === 'here') {
+                                statusBadge.className = 'status-badge status-here';
+                                statusBadge.textContent = translations[currentLanguage].arrived;
+                                document.getElementById('arrived-btn').classList.add('hidden');
+                                document.getElementById('finish-trip-btn').classList.remove('hidden');
+                            }
+
+                            // Add a Contact Client button (WhatsApp) if phone is available
+                            try {
+                                const clientPhoneRaw = trip.phone || trip.clientPhone || trip.telephone || '';
+                                const contactClientBtn = document.getElementById('contact-client-btn');
+                                if (clientPhoneRaw && contactClientBtn) {
+                                    const normalize = s => String(s || '').replace(/\D+/g,'').replace(/^0+/, '');
+                                    const phoneNorm = normalize(clientPhoneRaw);
+                                    if (phoneNorm) {
+                                        contactClientBtn.classList.remove('hidden');
+                                        contactClientBtn.href = `https://wa.me/${phoneNorm}`;
+                                    } else {
+                                        contactClientBtn.classList.add('hidden');
+                                        contactClientBtn.href = '#';
+                                    }
+                                }
+                            } catch(e) { /* non-fatal */ }
+                            
+                            if (trip.latitude && trip.longitude && driverLocation) {
+                                const clientLocation = { 
+                                    lat: parseFloat(trip.latitude), 
+                                    lng: parseFloat(trip.longitude) 
+                                };
+                                updateMapRoute(driverLocation, clientLocation);
+                            }
+                            
+                            return;
+                        }
+                    });
+                } else {
+                    activeTripSection.classList.add('hidden');
+                    currentTrip = null;
+                }
+            });
+        }
+        
+        function handleArrivedButton() {
+            document.getElementById('arrived-btn').addEventListener('click', function() {
+                if (!currentTrip) return;
+                
+                const confirmedRef = database.ref(`commande_confirmed/${currentTrip.key}`);
+                const payload = { status: 'here', arrivedAt: Date.now() };
+                if (currentDriver) {
+                    payload.driverName = `${currentDriver.firstname || ''} ${currentDriver.lastname || ''}`.trim();
+                    payload.driverPhone = currentDriver.phone || currentDriver.mobile || '';
+                    payload.driverPhoto = currentDriver.photoURL || '';
+                }
+                confirmedRef.update(payload)
+                    .then(() => {
+                        const statusBadge = document.getElementById('trip-status-badge');
+                        statusBadge.className = 'status-badge status-here';
+                        statusBadge.textContent = translations[currentLanguage].arrived;
+                        document.getElementById('arrived-btn').classList.add('hidden');
+                        document.getElementById('finish-trip-btn').classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error("Erreur lors de la mise à jour du statut:", error);
+                        alert(translations[currentLanguage].status_update_error);
+                    });
+            });
+        }
+        
+        function handleFinishTripButton() {
+            document.getElementById('finish-trip-btn').addEventListener('click', function() {
+                if (!currentTrip) return;
+                
+                const confirmedRef = database.ref(`commande_confirmed/${currentTrip.key}`);
+                confirmedRef.update({ status: 'finished', finishedAt: firebase.database.ServerValue.TIMESTAMP })
+                    .then(() => {
+                        loadStatistics();
+
+                        // Remove the active trip UI and ensure the finished order is
+                        // removed from the available requests list so it cannot reappear.
+                        const finishedKey = currentTrip && currentTrip.key ? currentTrip.key : null;
+
+                        document.getElementById('active-trip-section').classList.add('hidden');
+                        currentTrip = null;
+
+                        if (finishedKey) {
+                            try { removeRequestCard(finishedKey); } catch(e){}
+                            try { clearScheduledTimersForOrder(finishedKey); } catch(e){}
+                        }
+
+                        if (currentDriver && currentDriver.id) {
+                            const driverRef = database.ref(`drivers/${currentDriver.id}`);
+                            driverRef.update({ status: 'available' });
+                            driverStatus = 'available';
+                            updateStatusUI();
+
+                            document.getElementById('requests-section').classList.remove('hidden');
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Erreur lors de la mise à jour du statut:", error);
+                        alert(translations[currentLanguage].status_update_error);
+                    });
+            });
+        }
+        
+        function loadReviews() {
+            if (!currentDriver || !currentDriver.id) return;
+            
+            const reviewsRef = database.ref(`drivers/${currentDriver.id}/reviews`);
+            const reviewsList = document.getElementById('reviews-list');
+            
+            reviewsRef.orderByChild('timestamp').limitToLast(5).on('value', snapshot => {
+                reviewsList.innerHTML = '';
+                
+                if (!snapshot.exists()) {
+                    document.getElementById('no-reviews-message').classList.remove('hidden');
+                    return;
+                }
+                
+                snapshot.forEach(child => {
+                    const review = child.val();
+                    const reviewDate = new Date(review.timestamp);
+                    const formattedDate = reviewDate.toLocaleDateString(currentLanguage, { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric' 
+                    });
+                    
+                    const reviewElement = document.createElement('div');
+                    reviewElement.className = 'flex items-start p-3 border-b border-gray-200';
+                    reviewElement.innerHTML = `
+                        <div class="flex-shrink-0">
+                            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-10 h-10 flex items-center justify-center">
+                                <i class="ri-user-line text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <div class="flex justify-between">
+                                <h4 class="font-medium text-gray-800">${review.userName || translations[currentLanguage].anonymous}</h4>
+                                <div class="text-yellow-400 flex">
+                                    ${renderStars(review.rating)}
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">${formattedDate}</p>
+                        </div>
+                    `;
+                    
+                    reviewsList.appendChild(reviewElement);
+                    document.getElementById('no-reviews-message').classList.add('hidden');
+                });
+            });
+        }
+        
+        function renderStars(rating) {
+            let stars = '';
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 >= 0.5;
+            
+            for (let i = 0; i < 5; i++) {
+                if (i < fullStars) {
+                    stars += '<i class="ri-star-fill"></i>';
+                } else if (i === fullStars && halfStar) {
+                    stars += '<i class="ri-star-half-fill"></i>';
+                } else {
+                    stars += '<i class="ri-star-line"></i>';
+                }
+            }
+            
+            return stars;
+        }
+        
+        function loadStatistics() {
+            if (!currentDriver || !currentDriver.id) return;
+
+            // Detach previous listener if present
+            try {
+                if (__driverStatsRef) { __driverStatsRef.off('value'); __driverStatsRef = null; }
+            } catch(e) {}
+
+            const confirmedRef = database.ref('commande_confirmed').orderByChild('driverId').equalTo(currentDriver.id);
+            __driverStatsRef = confirmedRef;
+
+            confirmedRef.on('value', snapshot => {
+                const today = new Date();
+                const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+                const startOfLast7Days = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6).getTime();
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
+
+                let todayCount = 0;
+                let weekCount = 0;
+                let monthCount = 0;
+                let totalCount = 0;
+                let todayEarnings = 0;
+                let weekEarnings = 0;
+                let monthEarnings = 0;
+                let totalEarnings = 0;
+
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        const trip = child.val();
+                        if (!trip) return;
+                        if (trip.status === 'finished') {
+                            const tripDate = trip.finishedAt || trip.timestamp || 0;
+                            const price = parseFloat(trip.price) || 0;
+
+                            totalCount++;
+                            totalEarnings += price;
+
+                            if (tripDate >= startOfToday) {
+                                todayCount++;
+                                todayEarnings += price;
+                            }
+
+                            if (tripDate >= startOfLast7Days) {
+                                weekCount++;
+                                weekEarnings += price;
+                            }
+
+                            if (tripDate >= startOfMonth) {
+                                monthCount++;
+                                monthEarnings += price;
+                            }
+                        }
+                    });
+                }
+
+                document.getElementById('today-trips').textContent = todayCount;
+                document.getElementById('week-trips').textContent = weekCount;
+                document.getElementById('month-trips').textContent = monthCount;
+                document.getElementById('total-trips').textContent = totalCount;
+
+                document.getElementById('today-earnings').textContent = todayEarnings.toFixed(2) + ' $';
+                document.getElementById('week-earnings').textContent = weekEarnings.toFixed(2) + ' $';
+                document.getElementById('month-earnings').textContent = monthEarnings.toFixed(2) + ' $';
+                document.getElementById('total-earnings').textContent = totalEarnings.toFixed(2) + ' $';
+
+                loadHistory(snapshot);
+            });
+        }
+        
+        function loadHistory(snapshot) {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            
+            if (!snapshot.exists()) {
+                document.getElementById('no-history-message').classList.remove('hidden');
+                return;
+            }
+            
+            let count = 0;
+            snapshot.forEach(child => {
+                if (count >= 5) return;
+                
+                const trip = child.val();
+                if (trip.status === 'finished') {
+                    count++;
+                    
+                    const tripDate = new Date(trip.finishedAt || trip.timestamp);
+                    const formattedDate = tripDate.toLocaleDateString(currentLanguage, { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const historyElement = document.createElement('div');
+                    historyElement.className = 'flex items-center justify-between p-3 border-b border-gray-200';
+                    historyElement.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-10 h-10 flex items-center justify-center">
+                                <i class="ri-user-line text-gray-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="font-medium text-gray-800">${trip.clientName || translations[currentLanguage].client}</h4>
+                                <p class="text-xs text-gray-500">${formattedDate}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium text-gray-800">${trip.price || '0'} $</p>
+                            <div class="flex items-center">
+                                <i class="ri-map-pin-line text-primary text-xs"></i>
+                                <span class="text-xs text-gray-500 ml-1">${trip.destination || translations[currentLanguage].unknown_destination}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    historyList.appendChild(historyElement);
+                    document.getElementById('no-history-message').classList.add('hidden');
+                }
+            });
+            
+            if (count === 0) {
+                document.getElementById('no-history-message').classList.remove('hidden');
+            }
+        }
+        
+        function setupAppBanner() {
+            const appBanner = document.getElementById('app-banner');
+            const closeBanner = document.getElementById('close-banner');
+            const downloadApp = document.getElementById('download-app');
+            
+            if (localStorage.getItem('appBannerClicked') === 'true') {
+                appBanner.classList.add('hidden');
+            }
+            
+            closeBanner.addEventListener('click', function() {
+                appBanner.classList.add('hidden');
+                localStorage.setItem('appBannerClicked', 'true');
+            });
+            
+            downloadApp.addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.setItem('appBannerClicked', 'true');
+                alert(translations[currentLanguage].app_download);
+            });
+        }
+        
+        function setupAppModal() {
+            const modalDownloadBtn = document.getElementById('modal-download-btn');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            
+            modalCloseBtn.addEventListener('click', function() {
+                document.getElementById('app-modal').classList.add('hidden');
+            });
+            
+            modalDownloadBtn.addEventListener('click', function() {
+                if (currentDriver && currentDriver.id) {
+                    const driverRef = database.ref(`drivers/${currentDriver.id}`);
+                    driverRef.update({ apkDownloaded: true })
+                        .then(() => {
+                            document.getElementById('app-modal').classList.add('hidden');
+                            document.getElementById('apk-download-section').classList.remove('hidden');
+                        })
+                        .catch(error => {
+                            console.error("Erreur lors de la mise à jour:", error);
+                        });
+                }
+            });
+        }
+        
+        function setupProfileEdit() {
+            const editIcon = document.getElementById('edit-profile-icon');
+            const profileEditModal = document.getElementById('profile-edit-modal');
+            const cancelEditBtn = document.getElementById('cancel-edit');
+            const saveEditBtn = document.getElementById('save-edit');
+            const editPhotoContainer = document.getElementById('edit-photo-container');
+            const editPhotoUpload = document.getElementById('profile-edit-upload');
+            const editPhotoPreview = document.getElementById('edit-photo-preview');
+            const editPreviewImage = document.getElementById('edit-preview-image');
+            const removeEditPhotoBtn = document.getElementById('remove-edit-photo');
+            
+            editIcon.addEventListener('click', function() {
+                profileEditModal.classList.remove('hidden');
+            });
+            
+            cancelEditBtn.addEventListener('click', function() {
+                profileEditModal.classList.add('hidden');
+                newProfilePhoto = '';
+            });
+            
+            editPhotoContainer.addEventListener('click', function() {
+                editPhotoUpload.click();
+            });
+            
+            editPhotoUpload.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    
+                    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    if (!validTypes.includes(file.type)) {
+                        return;
+                    }
+                    
+                    if (file.size > 5 * 1024 * 1024) {
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        newProfilePhoto = event.target.result;
+                        editPreviewImage.src = newProfilePhoto;
+                        editPhotoPreview.classList.remove('hidden');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            removeEditPhotoBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                editPhotoUpload.value = '';
+                newProfilePhoto = '';
+                editPreviewImage.src = '';
+                editPhotoPreview.classList.add('hidden');
+            });
+            
+            saveEditBtn.addEventListener('click', function() {
+                if (!newProfilePhoto) return;
+                
+                if (currentDriver && currentDriver.id) {
+                    const driverRef = database.ref(`drivers/${currentDriver.id}`);
+                    driverRef.update({ photoURL: newProfilePhoto })
+                        .then(() => {
+                            document.getElementById('driver-profile').src = newProfilePhoto;
+                            profileEditModal.classList.add('hidden');
+                        })
+                        .catch(error => {
+                            console.error("Erreur lors de la mise à jour:", error);
+                        });
+                }
+            });
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg shadow-lg text-white z-50 bg-green-500`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        function showNewOrderNotification() {
+            const notification = document.getElementById('notification-alert');
+            const notificationText = document.getElementById('notification-text');
+            const dismissBtn = document.getElementById('dismiss-notification');
+            
+            notificationText.textContent = translations[currentLanguage].new_order;
+            notification.classList.remove('hidden');
+            
+            dismissBtn.addEventListener('click', function() {
+                notification.classList.add('hidden');
+            });
+        }
+        
+        window.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Ajout des traductions manquantes
+                translations.fr.registration_success = "Votre inscription a été soumise et est en attente de validation. Vous serez notifié une fois approuvé.";
+                translations.fr.registration_error = "Une erreur est survenue. Veuillez réessayer.";
+                translations.fr.login_error = "Mot de passe incorrect ou compte non trouvé.";
+                translations.fr.location_error = "L'accès à votre position est nécessaire pour recevoir des commandes. Veuillez activer la géolocalisation.";
+                translations.fr.location_not_supported = "La géolocalisation n'est pas supportée par votre navigateur.";
+                translations.fr.new_order = "Nouvelle commande disponible!";
+                translations.fr.order_cancelled = "Commande annulée";
+                translations.fr.cancellation_error = "Erreur lors de l'annulation";
+                translations.fr.order_accepted = "Commande acceptée";
+                translations.fr.acceptance_error = "Erreur lors de l'acceptation";
+                translations.fr.status_update_error = "Une erreur est survenue lors de la mise à jour du statut.";
+                translations.fr.app_download = "Téléchargement de l'application en cours...";
+                translations.fr.calculating = "Calcul en cours";
+                translations.fr.just_now = "À l'instant";
+                translations.fr.one_minute_ago = "Il y a 1 minute";
+                translations.fr.minutes_ago = "Il y a {n} minutes";
+                translations.fr.price = "Prix";
+                translations.fr.cancel = "Annuler";
+                translations.fr.accept = "Accepter";
+                translations.fr.urgent = "Urgent";
+                translations.fr.now = "Maintenant";
+                translations.fr.unknown_destination = "Destination inconnue";
+                translations.fr.anonymous = "Anonyme";
+                translations.fr.busy = "Occupé";
+                translations.fr.set_available = "Passer en mode Disponible";
+                translations.fr.measuring_error = "Erreur de mesure";
+                translations.fr.minutes = "minutes";
+                translations.fr.new_orders = "nouvelles";
+                translations.fr.password_not_unique = "Ce mot de passe est déjà utilisé par un autre chauffeur";
+                
+                // Initialiser la langue
+                const languageSelect = document.getElementById('language-select');
+                languageSelect.value = currentLanguage;
+                languageSelect.addEventListener('change', function() {
+                    translatePage(this.value);
+                });
+                translatePage(currentLanguage);
+                
+                initMap();
+                checkOnlineStatus();
+                
+                setupAppBanner();
+                setupAppModal();
+                setupProfileEdit();
+                setupOrderHandling();
+                setupStatusToggle();
+                handleArrivedButton();
+                handleFinishTripButton();
+                handleEmailVerification();
+                handleDownloadButtons();
+                handleIOSInstallModal();
+                
+                document.getElementById('location-ok-btn').addEventListener('click', function() {
+                    document.getElementById('location-modal').classList.add('hidden');
+                });
+                
+                currentIP = await getIP();
+                
+                if (currentIP) {
+                    setupForms();
+                    await checkDriver();
+                    measureConnectionSpeed();
+                }
+            } catch (error) {
+                console.error("Erreur lors de l'initialisation:", error);
+                alert("Une erreur est survenue lors de l'initialisation de l'application.");
+            }
+        });
+    </script>
+</body>
+</html>
