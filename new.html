@@ -2074,6 +2074,10 @@
                     <div>
                         <div class="text-sm text-gray-700 font-semibold">${order.clientName || 'Client'}</div>
                         <div class="text-xs text-gray-500">${order.pickup || '—'} → ${order.destination || '—'}</div>
+                        <div class="text-xs text-blue-600">
+                            <i class="fas ${order.roundTrip ? 'fa-exchange-alt' : 'fa-long-arrow-alt-right'} mr-1"></i>
+                            ${order.roundTrip ? 'Aller-retour' : 'Aller simple'}
+                        </div>
                     </div>
                 </div>
                 <div class="order-actions">
